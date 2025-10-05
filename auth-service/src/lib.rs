@@ -13,9 +13,12 @@ impl Application {
     pub async fn build(address: &str) -> Result<Self, Box<dyn Error>> {
         let router = Router::new().nest_service("/", ServeDir::new("assets"));
 
+        let listener = tokio::net::TcpListener::bind(address).await?;
+        let local_address = listener.local_addr().unwrap().to_string();
+
         Ok(Self {
-            server: axum::serve(tokio::net::TcpListener::bind(address).await?, router),
-            address: address.to_owned(),
+            server: axum::serve(listener, router),
+            address: local_address,
         })
     }
 
