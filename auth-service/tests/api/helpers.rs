@@ -92,3 +92,7 @@ impl TestApp {
             .expect("Failed to execute request.")
     }
 }
+
+pub fn get_random_email() -> String {
+    "grover@example.com".into()
+}

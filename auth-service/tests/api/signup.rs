@@ -1,4 +1,4 @@
-use crate::helpers::TestApp;
+use crate::helpers::{get_random_email, TestApp};
 use crate::requests;
 
 static APPLICATION_JSON: &str = "application/json";
@@ -21,8 +21,8 @@ async fn signup_returns_created() {
     let app = TestApp::new().await;
     let response = app
         .post_signup(&requests::SignupRequest {
-            email: "someone@somewhere",
-            password: "password",
+            email: get_random_email(),
+            password: "password".into(),
             requires_2fa: false,
         })
         .await;
