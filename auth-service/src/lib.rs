@@ -1,8 +1,32 @@
 use axum::{http::StatusCode, response::IntoResponse, routing::post, serve::Serve, Router};
 use std::error::Error;
+use std::sync::Arc;
+use tokio::sync::RwLock;
 use tower_http::services::ServeDir;
 
+pub mod domain;
 pub mod routes;
+pub mod services;
+
+use crate::services::HashmapUserStore;
+
+// Using a type alias to improve readability!
+pub type UserStoreType = Arc<RwLock<HashmapUserStore>>;
+
+#[derive(Clone)]
+pub struct AppState {
+    pub user_store: UserStoreType,
+}
+
+impl AppState {
+    // pub fn new(user_store: UserStoreType) -> Self {
+    // NOTE: Deviant, this will be replaced by a trait later.
+    pub fn new(user_store: HashmapUserStore) -> Self {
+        Self {
+            user_store: Arc::new(RwLock::new(user_store)),
+        }
+    }
+}
 
 pub struct Application {
     server: Serve<Router, Router>,
@@ -12,14 +36,15 @@ pub struct Application {
 }
 
 impl Application {
-    pub async fn build(address: &str) -> Result<Self, Box<dyn Error>> {
+    pub async fn build(app_state: AppState, address: &str) -> Result<Self, Box<dyn Error>> {
         let router = Router::new()
             .nest_service("/", ServeDir::new("assets"))
             .route("/login", post(routes::login))
             .route("/logout", post(routes::logout))
             .route("/signup", post(routes::signup))
             .route("/verify-2fa", post(routes::verify_2fa))
-            .route("/verify-token", post(routes::verify_token));
+            .route("/verify-token", post(routes::verify_token))
+            .with_state(app_state);
 
         let listener = tokio::net::TcpListener::bind(address).await?;
         let local_address = listener.local_addr().unwrap().to_string();
