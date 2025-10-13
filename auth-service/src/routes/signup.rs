@@ -1,4 +1,7 @@
-use crate::{domain::User, AppState};
+use crate::{
+    domain::{AuthAPIError, User},
+    AppState,
+};
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use serde::{Deserialize, Serialize};
 
@@ -6,18 +9,33 @@ pub async fn signup(
     State(state): State<AppState>,
     Json(request): Json<SignupRequest>,
 ) -> impl IntoResponse {
-    // Create a new `User` instance using data in the `request`
-    let user = User::from(request);
+    let user = match User::try_from(request) {
+        Ok(u) => u,
+        Err(e) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(SignupResponse {
+                    message: e.to_string(),
+                }),
+            );
+        }
+    };
 
-    // TODO: Add `user` to the `user_store`. Simply unwrap the returned `Result` enum type for now.
     let mut user_store = state.user_store.write().await;
-    user_store.add_user(user).unwrap();
+    let (code, response_msg) = match user_store.add_user(user) {
+        Ok(_) => (
+            StatusCode::CREATED,
+            "User created successfully!".to_string(),
+        ),
+        Err(_e) => (StatusCode::CONFLICT, "User already exists".to_string()),
+    };
 
-    let response = Json(SignupResponse {
-        message: "User created successfully!".to_string(),
-    });
-
-    (StatusCode::CREATED, response)
+    (
+        code,
+        Json(SignupResponse {
+            message: response_msg,
+        }),
+    )
 }
 
 #[derive(Deserialize, Serialize)]
@@ -28,9 +46,20 @@ pub struct SignupRequest {
     pub requires_2fa: bool,
 }
 
-impl From<SignupRequest> for User {
-    fn from(value: SignupRequest) -> Self {
-        User::new(value.email, value.password, value.requires_2fa)
+impl SignupRequest {
+    pub fn new<T: ToString>(email: T, password: T, requires_2fa: bool) -> Self {
+        Self {
+            email: email.to_string(),
+            password: password.to_string(),
+            requires_2fa,
+        }
+    }
+}
+
+impl TryFrom<SignupRequest> for User {
+    type Error = AuthAPIError;
+    fn try_from(value: SignupRequest) -> Result<Self, Self::Error> {
+        Ok(User::new(value.email, value.password, value.requires_2fa)?)
     }
 }
 

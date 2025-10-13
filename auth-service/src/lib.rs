@@ -1,4 +1,3 @@
-use axum::{http::StatusCode, response::IntoResponse, routing::post, serve::Serve, Router};
 use std::error::Error;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -9,6 +8,15 @@ pub mod routes;
 pub mod services;
 
 use crate::services::HashmapUserStore;
+use axum::{
+    http::StatusCode,
+    response::{IntoResponse, Response},
+    routing::post,
+    serve::Serve,
+    Json, Router,
+};
+use domain::AuthAPIError;
+use serde::{Deserialize, Serialize};
 
 // Using a type alias to improve readability!
 pub type UserStoreType = Arc<RwLock<HashmapUserStore>>;
@@ -58,5 +66,29 @@ impl Application {
     pub async fn run(self) -> Result<(), std::io::Error> {
         println!("listening on {}", &self.address);
         self.server.await
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct ErrorResponse {
+    pub error: String,
+}
+
+impl IntoResponse for AuthAPIError {
+    fn into_response(self) -> Response {
+        let (status, error_message) = match self {
+            AuthAPIError::UserAlreadyExists => (StatusCode::CONFLICT, "User already exists"),
+            AuthAPIError::InvalidCredentials(_s) => {
+                // Logging/Tracing could be used here.
+                (StatusCode::BAD_REQUEST, "Invalid credentails")
+            }
+            AuthAPIError::UnexpectedError => {
+                (StatusCode::INTERNAL_SERVER_ERROR, "Unexpected error")
+            }
+        };
+        let body = Json(ErrorResponse {
+            error: error_message.to_string(),
+        });
+        (status, body).into_response()
     }
 }

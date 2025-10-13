@@ -7,6 +7,11 @@ pub struct TestApp {
 
 impl TestApp {
     pub async fn new() -> Self {
+        // TODO: Consider removing/moving this in the future.
+        tracing_subscriber::fmt()
+            .with_max_level(tracing::Level::DEBUG)
+            .init();
+
         let user_store = HashmapUserStore::default();
         let app_state = AppState::new(user_store);
 

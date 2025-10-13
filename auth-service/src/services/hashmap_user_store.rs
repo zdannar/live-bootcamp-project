@@ -47,10 +47,15 @@ impl HashmapUserStore {
 mod tests {
     use super::*;
 
+    const VALID_PASSWORD: &str = "validpassword";
+    const INVALID_PASSWORD: &str = "invalid";
+    const VALID_EMAIL: &str = "chuck@chuck.com";
+
     #[tokio::test]
     async fn test_add_user() {
         let mut user_store = HashmapUserStore::default();
-        let u = User::new("chuck@chuck.com", "chuck", false);
+        // TODO: Fix unwrap
+        let u = User::new(VALID_EMAIL, VALID_PASSWORD, false).unwrap();
 
         // Add the user.  Validate that it made it into the hashmap.
         assert_eq!(user_store.add_user(u.clone()), Ok(()));
@@ -63,7 +68,8 @@ mod tests {
     #[tokio::test]
     async fn test_get_user() {
         let mut user_store = HashmapUserStore::default();
-        let u = User::new("chuck@chuck.com", "chuck", false);
+        // TODO: Fix unwrap
+        let u = User::new(VALID_EMAIL, VALID_PASSWORD, false).unwrap();
 
         user_store.users.insert(u.email.clone(), u.clone());
         let ret_user = user_store.get_user(&u.email).unwrap();
@@ -73,13 +79,12 @@ mod tests {
     #[tokio::test]
     async fn test_validate_user() {
         let mut user_store = HashmapUserStore::default();
-        let password = "chuck";
-        let bad_password = "munkey";
-        let u = User::new("chuck@chuck.com", password, false);
+        // TODO: Fix unwrap
+        let u = User::new(VALID_EMAIL, VALID_PASSWORD, false).unwrap();
         user_store.add_user(u.clone()).unwrap();
-        assert_eq!(user_store.validate_user(&u.email, password), Ok(()));
+        assert_eq!(user_store.validate_user(&u.email, VALID_PASSWORD), Ok(()));
         assert_eq!(
-            user_store.validate_user(&u.email, bad_password),
+            user_store.validate_user(&u.email, INVALID_PASSWORD),
             Err(UserStoreError::InvalidCredentials)
         );
     }
