@@ -7,7 +7,6 @@ pub mod domain;
 pub mod routes;
 pub mod services;
 
-use crate::services::HashmapUserStore;
 use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
@@ -16,20 +15,21 @@ use axum::{
     Json, Router,
 };
 use domain::AuthAPIError;
+use domain::UserStore;
 use serde::{Deserialize, Serialize};
 
-// Using a type alias to improve readability!
-pub type UserStoreType = Arc<RwLock<HashmapUserStore>>;
+pub type UserStoreType<T> = Arc<RwLock<T>>;
 
 #[derive(Clone)]
-pub struct AppState {
-    pub user_store: UserStoreType,
+pub struct AppState<T> {
+    pub user_store: UserStoreType<T>,
 }
 
-impl AppState {
-    // pub fn new(user_store: UserStoreType) -> Self {
-    // NOTE: Deviant, this will be replaced by a trait later.
-    pub fn new(user_store: HashmapUserStore) -> Self {
+impl<T> AppState<T>
+where
+    T: UserStore + Clone + Sync + Send + 'static,
+{
+    pub fn new(user_store: T) -> Self {
         Self {
             user_store: Arc::new(RwLock::new(user_store)),
         }
@@ -44,7 +44,11 @@ pub struct Application {
 }
 
 impl Application {
-    pub async fn build(app_state: AppState, address: &str) -> Result<Self, Box<dyn Error>> {
+    pub async fn build<T: UserStore + Send + Sync + Clone + 'static>(
+        app_state: AppState<T>,
+        address: &str,
+        // ) -> Result<Self, Box<dyn Error>> {
+    ) -> Result<Self, Box<dyn Error>> {
         let router = Router::new()
             .nest_service("/", ServeDir::new("assets"))
             .route("/login", post(routes::login))

@@ -1,20 +1,11 @@
-use crate::helpers::{get_random_email, TestApp};
+use crate::helpers::{assert_success_and_context_type, get_random_email, TestApp};
 use auth_service::routes::{SignupRequest, SignupResponse};
 use auth_service::ErrorResponse;
 
-const APPLICATION_JSON: &str = "application/json";
 const VALID_PASSWORD: &str = "validpassword";
 const INVALID_PASSWORD: &str = "invalid";
 const VALID_EMAIL: &str = "chuck@chuck.com";
 const INVALID_EMAIL: &str = "chuck.chuck.com";
-
-fn assert_success_and_context_type(
-    response: &reqwest::Response,
-    status_code: u16,
-    _content_type: &str,
-) {
-    assert_eq!(response.status().as_u16(), status_code);
-}
 
 #[tokio::test]
 async fn should_return_201_if_valid_input() {
@@ -26,7 +17,7 @@ async fn should_return_201_if_valid_input() {
             requires_2fa: false,
         })
         .await;
-    assert_success_and_context_type(&response, 201, APPLICATION_JSON);
+    assert_success_and_context_type(&response, 201, None);
 
     let expected_response = SignupResponse {
         message: "User created successfully!".to_owned(),
@@ -52,7 +43,7 @@ async fn should_return_400_if_invalid_input() {
 
     for signup_request in invalid_signup_requests.iter() {
         let response = app.post_signup(signup_request).await;
-        assert_success_and_context_type(&response, 400, APPLICATION_JSON);
+        assert_success_and_context_type(&response, 400, None);
     }
 }
 
@@ -64,7 +55,7 @@ async fn should_return_409_if_email_already_exists() {
 
     let mut response = app.post_signup(&signup_request).await;
     println!(">> DEBUG: {response:?}");
-    assert_success_and_context_type(&response, 201, APPLICATION_JSON);
+    assert_success_and_context_type(&response, 201, None);
 
     response = app.post_signup(&signup_request).await;
     assert_eq!(response.status().as_u16(), 409);

@@ -1,3 +1,4 @@
+use crate::UserStore;
 use crate::{
     domain::{AuthAPIError, User},
     AppState,
@@ -5,8 +6,8 @@ use crate::{
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use serde::{Deserialize, Serialize};
 
-pub async fn signup(
-    State(state): State<AppState>,
+pub async fn signup<T: UserStore>(
+    State(state): State<AppState<T>>,
     Json(request): Json<SignupRequest>,
 ) -> impl IntoResponse {
     let user = match User::try_from(request) {
@@ -22,7 +23,7 @@ pub async fn signup(
     };
 
     let mut user_store = state.user_store.write().await;
-    let (code, response_msg) = match user_store.add_user(user) {
+    let (code, response_msg) = match user_store.add_user(user).await {
         Ok(_) => (
             StatusCode::CREATED,
             "User created successfully!".to_string(),

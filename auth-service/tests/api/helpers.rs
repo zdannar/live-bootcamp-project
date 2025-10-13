@@ -7,10 +7,10 @@ pub struct TestApp {
 
 impl TestApp {
     pub async fn new() -> Self {
-        // TODO: Consider removing/moving this in the future.
-        tracing_subscriber::fmt()
-            .with_max_level(tracing::Level::DEBUG)
-            .init();
+        // // TODO: Consider removing/moving this in the future.
+        // tracing_subscriber::fmt()
+        //     .with_max_level(tracing::Level::DEBUG)
+        //     .init();
 
         let user_store = HashmapUserStore::default();
         let app_state = AppState::new(user_store);
@@ -103,4 +103,17 @@ impl TestApp {
 
 pub fn get_random_email() -> String {
     "grover@example.com".into()
+}
+
+static APPLICATION_JSON: &str = "application/json";
+pub fn assert_success_and_context_type(
+    response: &reqwest::Response,
+    status_code: u16,
+    content_type: Option<&str>,
+) {
+    assert_eq!(response.status().as_u16(), status_code);
+    // assert_eq!(
+    //     response.headers().get("content-type").unwrap(),
+    //     content_type.unwrap_or(APPLICATION_JSON)
+    // );
 }
