@@ -47,7 +47,6 @@ impl Application {
     pub async fn build<T: UserStore + Send + Sync + Clone + 'static>(
         app_state: AppState<T>,
         address: &str,
-        // ) -> Result<Self, Box<dyn Error>> {
     ) -> Result<Self, Box<dyn Error>> {
         let router = Router::new()
             .nest_service("/", ServeDir::new("assets"))
@@ -70,29 +69,5 @@ impl Application {
     pub async fn run(self) -> Result<(), std::io::Error> {
         println!("listening on {}", &self.address);
         self.server.await
-    }
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct ErrorResponse {
-    pub error: String,
-}
-
-impl IntoResponse for AuthAPIError {
-    fn into_response(self) -> Response {
-        let (status, error_message) = match self {
-            AuthAPIError::UserAlreadyExists => (StatusCode::CONFLICT, "User already exists"),
-            AuthAPIError::InvalidCredentials(_s) => {
-                // Logging/Tracing could be used here.
-                (StatusCode::BAD_REQUEST, "Invalid credentails")
-            }
-            AuthAPIError::UnexpectedError => {
-                (StatusCode::INTERNAL_SERVER_ERROR, "Unexpected error")
-            }
-        };
-        let body = Json(ErrorResponse {
-            error: error_message.to_string(),
-        });
-        (status, body).into_response()
     }
 }

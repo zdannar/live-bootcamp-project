@@ -109,7 +109,7 @@ static APPLICATION_JSON: &str = "application/json";
 pub fn assert_success_and_context_type(
     response: &reqwest::Response,
     status_code: u16,
-    content_type: Option<&str>,
+    _content_type: Option<&str>,
 ) {
     assert_eq!(response.status().as_u16(), status_code);
     // assert_eq!(

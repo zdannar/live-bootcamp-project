@@ -23,20 +23,26 @@ pub async fn signup<T: UserStore>(
     };
 
     let mut user_store = state.user_store.write().await;
+
     let (code, response_msg) = match user_store.add_user(user).await {
         Ok(_) => (
             StatusCode::CREATED,
-            "User created successfully!".to_string(),
+            SignupResponse {
+                message: "User created successfully!".to_string(),
+            },
         ),
-        Err(_e) => (StatusCode::CONFLICT, "User already exists".to_string()),
-    };
+        Err(e) => {
+            let x = e.into_response();
 
-    (
-        code,
-        Json(SignupResponse {
-            message: response_msg,
-        }),
-    )
+            (
+                StatusCode::CONFLICT,
+                SignupResponse {
+                    message: "User already exists".to_string(),
+                },
+            )
+        }
+    };
+    (code, Json(response_msg))
 }
 
 #[derive(Deserialize, Serialize)]
