@@ -81,10 +81,12 @@ impl IntoResponse for AuthAPIError {
     fn into_response(self) -> Response {
         let (status, error_message) = match self {
             AuthAPIError::UserAlreadyExists => (StatusCode::CONFLICT, "User already exists"),
-            AuthAPIError::InvalidCredentials(_s) => {
+            AuthAPIError::InvalidCredentials(s) => {
                 // Logging/Tracing could be used here.
-                (StatusCode::BAD_REQUEST, "Invalid credentails")
+                // (StatusCode::BAD_REQUEST, s.as_str())
+                (StatusCode::BAD_REQUEST, "Invalid Credentials")
             }
+            Self::UserDoesNotExists => (StatusCode::NOT_FOUND, "User not found"),
             AuthAPIError::UnexpectedError => {
                 (StatusCode::INTERNAL_SERVER_ERROR, "Unexpected error")
             }

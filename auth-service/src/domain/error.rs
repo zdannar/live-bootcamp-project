@@ -7,6 +7,8 @@ pub enum AuthAPIError {
     UserAlreadyExists,
     #[error("Invalid credentails: {0}")]
     InvalidCredentials(String),
+    #[error("User does not exist")]
+    UserDoesNotExists,
     #[error("Unexpected error")]
     UnexpectedError,
 }
