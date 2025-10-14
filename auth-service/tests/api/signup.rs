@@ -1,5 +1,6 @@
 use crate::helpers::{assert_success_and_context_type, get_random_email, TestApp};
 use auth_service::routes::{SignupRequest, SignupResponse};
+use auth_service::AuthAPIError;
 use auth_service::ErrorResponse;
 
 const VALID_PASSWORD: &str = "validpassword";
@@ -17,6 +18,7 @@ async fn should_return_201_if_valid_input() {
             requires_2fa: false,
         })
         .await;
+
     assert_success_and_context_type(&response, 201, None);
 
     let expected_response = SignupResponse {
@@ -54,22 +56,24 @@ async fn should_return_409_if_email_already_exists() {
     let signup_request = SignupRequest::new(VALID_EMAIL, VALID_PASSWORD, false);
 
     let mut response = app.post_signup(&signup_request).await;
-    println!(">> DEBUG: {response:?}");
     assert_success_and_context_type(&response, 201, None);
 
     response = app.post_signup(&signup_request).await;
     assert_eq!(response.status().as_u16(), 409);
-    println!("I GOT HERE!");
 
+    response = app.post_signup(&signup_request).await;
     let round_two = response.json::<serde_json::Value>().await;
     println!("Debug Round two>> {round_two:?}");
 
-    // assert_eq!(
-    //     response
-    //         .json::<ErrorResponse>()
-    //         .await
-    //         .expect("Could not deserialize response body to ErrorResponse")
-    //         .error,
-    //     "User already exists".to_owned()
-    // );
+    response = app.post_signup(&signup_request).await;
+
+    assert_eq!(
+        response
+            // .json::<ErrorResponse>()
+            .json::<ErrorResponse>()
+            .await
+            .expect("Could not deserialize response body to ErrorResponse")
+            .error,
+        "User already exists".to_owned()
+    );
 }

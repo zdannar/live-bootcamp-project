@@ -14,7 +14,7 @@ use axum::{
     serve::Serve,
     Json, Router,
 };
-use domain::AuthAPIError;
+pub use domain::AuthAPIError;
 use domain::UserStore;
 use serde::{Deserialize, Serialize};
 
@@ -69,5 +69,30 @@ impl Application {
     pub async fn run(self) -> Result<(), std::io::Error> {
         println!("listening on {}", &self.address);
         self.server.await
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ErrorResponse {
+    pub error: String,
+}
+
+impl IntoResponse for AuthAPIError {
+    fn into_response(self) -> Response {
+        let (status, error_message) = match self {
+            AuthAPIError::UserAlreadyExists => (StatusCode::CONFLICT, "User already exists"),
+            AuthAPIError::InvalidCredentials(_s) => {
+                // Logging/Tracing could be used here.
+                (StatusCode::BAD_REQUEST, "Invalid credentails")
+            }
+            AuthAPIError::UnexpectedError => {
+                (StatusCode::INTERNAL_SERVER_ERROR, "Unexpected error")
+            }
+        };
+        let body = Json(ErrorResponse {
+            error: error_message.to_string(),
+        });
+
+        (status, body).into_response()
     }
 }
