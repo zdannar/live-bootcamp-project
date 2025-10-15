@@ -1,13 +1,13 @@
-use crate::domain::User;
 use crate::domain::UserStore;
 use crate::domain::UserStoreError;
+use crate::domain::{Email, User};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
 #[derive(Default, Debug)]
 pub struct HashmapUserStore {
-    users: Arc<RwLock<HashMap<String, User>>>,
+    users: Arc<RwLock<HashMap<Email, User>>>,
 }
 
 impl Clone for HashmapUserStore {
@@ -30,7 +30,7 @@ impl UserStore for HashmapUserStore {
         Ok(())
     }
 
-    async fn get_user(&self, email: &str) -> Result<User, UserStoreError> {
+    async fn get_user(&self, email: &Email) -> Result<User, UserStoreError> {
         let user_map = self.users.read().await;
 
         Ok(user_map
@@ -39,9 +39,9 @@ impl UserStore for HashmapUserStore {
             .to_owned())
     }
 
-    async fn validate_user(&self, email: &str, password: &str) -> Result<(), UserStoreError> {
+    async fn validate_user(&self, email: &Email, password: &str) -> Result<(), UserStoreError> {
         let u = self.get_user(email).await?;
-        match u.password == password {
+        match u.password.as_ref() == password {
             true => Ok(()),
             false => Err(UserStoreError::InvalidCredentials),
         }

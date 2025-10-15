@@ -1,9 +1,10 @@
+use crate::domain::{Email, Password};
 use thiserror::Error;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct User {
-    pub email: String,
-    pub password: String,
+    pub email: Email,
+    pub password: Password,
     pub requires_2fa: bool,
 }
 
@@ -13,29 +14,17 @@ impl User {
         password: T,
         requires_2fa: bool,
     ) -> Result<Self, UserValidationError> {
+        let valid_email = Email::parse(email.to_string())
+            .map_err(|e| UserValidationError::InvalidEmail(e.to_string()))?;
+
+        let validate_password = Password::parse(password.to_string())
+            .map_err(|e| UserValidationError::InvalidPassword(e.to_string()))?;
+
         Ok(Self {
-            email: validate_email(email.to_string())?,
-            password: validate_passwored(password.to_string())?,
+            email: valid_email,
+            password: validate_password,
             requires_2fa,
         })
-    }
-}
-
-fn validate_email(email: String) -> Result<String, UserValidationError> {
-    match email.contains("@") {
-        true => Ok(email),
-        false => Err(UserValidationError::InvalidEmail(
-            "Email did not contain a '@' char.".to_owned(),
-        )),
-    }
-}
-
-fn validate_passwored(password: String) -> Result<String, UserValidationError> {
-    match password.len() >= 8 {
-        true => Ok(password),
-        false => Err(UserValidationError::InvalidPassword(
-            "Password is of invalid length".to_owned(),
-        )),
     }
 }
 
