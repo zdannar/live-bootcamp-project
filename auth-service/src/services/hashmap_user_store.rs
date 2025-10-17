@@ -7,7 +7,7 @@ use tokio::sync::RwLock;
 
 #[derive(Default, Debug)]
 pub struct HashmapUserStore {
-    users: Arc<RwLock<HashMap<Email, User>>>,
+    users: HashMap<Email, User>,
 }
 
 impl Clone for HashmapUserStore {
@@ -21,19 +21,17 @@ impl Clone for HashmapUserStore {
 #[async_trait::async_trait]
 impl UserStore for HashmapUserStore {
     async fn add_user(&mut self, user: User) -> Result<(), UserStoreError> {
-        let mut user_map = self.users.write().await;
-        if user_map.contains_key(&user.email) {
+        if self.users.contains_key(&user.email) {
             return Err(UserStoreError::UserAlreadyExists);
         }
 
-        user_map.insert(user.email.clone(), user);
+        self.users.insert(user.email.clone(), user);
         Ok(())
     }
 
     async fn get_user(&self, email: &Email) -> Result<User, UserStoreError> {
-        let user_map = self.users.read().await;
-
-        Ok(user_map
+        Ok(self
+            .users
             .get(email)
             .ok_or(UserStoreError::UserNotFound)?
             .to_owned())
@@ -73,12 +71,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_user() {
-        let user_store = HashmapUserStore::default();
+        let mut user_store = HashmapUserStore::default();
         // TODO: Fix unwrap
         let u = User::new(VALID_EMAIL, VALID_PASSWORD, false).unwrap();
         {
-            let mut user_map = user_store.users.write().await;
-            user_map.insert(u.email.clone(), u.clone());
+            user_store.users.insert(u.email.clone(), u.clone());
         }
         let ret_user = user_store.get_user(&u.email).await.unwrap();
         assert_eq!(u, ret_user);
