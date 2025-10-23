@@ -1,24 +1,39 @@
 use crate::domain::{Email, Login, Password};
+use crate::utils::auth;
 use crate::UserStore;
 use crate::{
     domain::{AuthAPIError, User},
     AppState,
 };
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
+use axum_extra::extract::CookieJar;
 use serde::{Deserialize, Serialize};
 
 pub async fn login<T: UserStore>(
     State(state): State<AppState<T>>,
+    jar: CookieJar,
     Json(request): Json<LoginRequest>,
-) -> Result<impl IntoResponse, AuthAPIError> {
+) -> (CookieJar, Result<impl IntoResponse, AuthAPIError>) {
     // OK.  I need to valate the credentails.
-    let login = Login::try_from(request)?;
+    let login = match Login::try_from(request) {
+        Err(e) => return (jar, Err(e.into())),
+        Ok(l) => l,
+    };
 
     // We are going to have to validate password and set cookies and stuff.
     let user_store = &state.user_store.read().await;
-    let user = user_store.get_user(&login.email).await?;
+    let user = match user_store.get_user(&login.email).await {
+        Err(e) => return (jar, Err(e.into())),
+        Ok(u) => u,
+    };
 
-    Ok(StatusCode::OK)
+    let Ok(auth_cookie) = auth::generate_auth_cookie(&user.email) else {
+        return (jar, Err(AuthAPIError::UnexpectedError));
+    };
+
+    let updated_jar = jar.add(auth_cookie);
+
+    (updated_jar, Ok(StatusCode::OK.into_response()))
 }
 
 #[derive(Debug, Clone, Deserialize)]
