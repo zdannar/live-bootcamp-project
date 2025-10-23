@@ -92,6 +92,8 @@ impl IntoResponse for AuthAPIError {
                 (StatusCode::INTERNAL_SERVER_ERROR, "Unexpected error")
             }
             AuthAPIError::IncorrectCredentials => (StatusCode::NOT_FOUND, "User not found"),
+            AuthAPIError::MissingToken => (StatusCode::BAD_REQUEST, "Missing token"),
+            AuthAPIError::InvalidToken => (StatusCode::UNAUTHORIZED, "Invalid Token"),
         };
         let body = Json(ErrorResponse {
             error: error_message.to_string(),

@@ -13,6 +13,10 @@ pub enum AuthAPIError {
     UnexpectedError,
     #[error("incorrect credentials")]
     IncorrectCredentials,
+    #[error("missing token")]
+    MissingToken,
+    #[error("Invalid token")]
+    InvalidToken,
 }
 
 impl From<UserValidationError> for AuthAPIError {
