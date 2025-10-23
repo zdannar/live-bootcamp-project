@@ -11,6 +11,8 @@ pub enum AuthAPIError {
     UserDoesNotExists,
     #[error("Unexpected error")]
     UnexpectedError,
+    #[error("incorrect credentials")]
+    IncorrectCredentials,
 }
 
 impl From<UserValidationError> for AuthAPIError {
@@ -29,8 +31,7 @@ impl From<UserStoreError> for AuthAPIError {
     fn from(value: UserStoreError) -> Self {
         match value {
             UserStoreError::UserAlreadyExists => Self::UserAlreadyExists,
-            // TODO: Fix
-            UserStoreError::UserNotFound => Self::UnexpectedError,
+            UserStoreError::UserNotFound => Self::IncorrectCredentials,
             // TODO: Fix
             UserStoreError::InvalidCredentials => Self::InvalidCredentials("asdf".to_string()),
             UserStoreError::UnexpectedError => Self::UnexpectedError,

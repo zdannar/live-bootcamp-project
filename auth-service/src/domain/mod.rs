@@ -1,10 +1,12 @@
 mod data_stores;
 mod email;
 mod error;
+mod login;
 mod password;
 mod user;
 pub use data_stores::{UserStore, UserStoreError};
 pub use email::*;
 pub use error::*;
+pub use login::Login;
 pub use password::*;
 pub use user::*;
