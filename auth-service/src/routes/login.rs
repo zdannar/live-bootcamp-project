@@ -6,7 +6,7 @@ use crate::{
     AppState,
 };
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
-use axum_extra::extract::CookieJar;
+use axum_extra::extract::{cookie, CookieJar};
 use serde::{Deserialize, Serialize};
 
 pub async fn login<T: UserStore>(
