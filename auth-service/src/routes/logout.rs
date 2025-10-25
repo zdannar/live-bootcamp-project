@@ -15,11 +15,9 @@ pub async fn logout<T: UserStore, B: BannedTokenStore>(
         return (jar, Err(AuthAPIError::MissingToken));
     };
 
-    // TODO: Fix unwrap
-
     let token = cookie.value().to_owned();
 
-    let Ok(_claims) = validate_token(&token).await else {
+    let Ok(_claims) = validate_token(&token, &*state.banned_token_store).await else {
         return (jar, Err(AuthAPIError::InvalidToken));
     };
 
