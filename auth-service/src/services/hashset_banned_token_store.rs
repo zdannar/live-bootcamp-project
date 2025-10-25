@@ -15,6 +15,14 @@ impl Default for HashsetBannedTokenStore {
     }
 }
 
+impl Clone for HashsetBannedTokenStore {
+    fn clone(&self) -> Self {
+        Self {
+            hashset: self.hashset.clone(),
+        }
+    }
+}
+
 #[async_trait::async_trait]
 impl BannedTokenStore for HashsetBannedTokenStore {
     async fn store(&self, token: &str) -> Result<(), BannedTokenStoreError> {

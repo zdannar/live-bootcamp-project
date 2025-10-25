@@ -18,7 +18,7 @@ use axum::{
     Json, Router,
 };
 pub use domain::AuthAPIError;
-use domain::{BannedTokenStore, UserStore};
+use domain::UserStore;
 use serde::{Deserialize, Serialize};
 
 pub type UserStoreType<T> = Arc<RwLock<T>>;
@@ -31,8 +31,8 @@ pub struct Application {
 }
 
 impl Application {
-    pub async fn build<T: UserStore + 'static, B: BannedTokenStore + 'static>(
-        app_state: AppState<T, B>,
+    pub async fn build<T: UserStore + Send + Sync + Clone + 'static>(
+        app_state: AppState<T>,
         address: &str,
     ) -> Result<Self, Box<dyn Error>> {
         let router = Router::new()

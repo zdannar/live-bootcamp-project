@@ -1,3 +1,4 @@
+use crate::domain::BannedTokenStore;
 use crate::UserStore;
 use crate::{
     domain::{AuthAPIError, User},
@@ -6,8 +7,8 @@ use crate::{
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use serde::{Deserialize, Serialize};
 
-pub async fn signup<T: UserStore>(
-    State(state): State<AppState<T>>,
+pub async fn signup<T: UserStore, B: BannedTokenStore>(
+    State(state): State<AppState<T, B>>,
     Json(request): Json<SignupRequest>,
 ) -> impl IntoResponse {
     let user = match User::try_from(request) {

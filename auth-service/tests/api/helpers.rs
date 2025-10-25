@@ -1,4 +1,7 @@
-use auth_service::{services::HashmapUserStore, AppState, Application};
+use auth_service::{
+    services::{HashmapUserStore, HashsetBannedTokenStore},
+    AppState, Application,
+};
 use reqwest::cookie::Jar;
 use std::sync::Arc;
 
@@ -16,7 +19,9 @@ impl TestApp {
         //     .init();
 
         let user_store = HashmapUserStore::default();
-        let app_state = AppState::new(user_store);
+        let banned_token_store = HashsetBannedTokenStore::default();
+
+        let app_state = AppState::new(user_store, banned_token_store);
 
         let app = Application::build(app_state, "127.0.0.1:0")
             .await
