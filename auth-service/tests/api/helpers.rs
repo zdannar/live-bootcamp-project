@@ -9,6 +9,7 @@ pub struct TestApp {
     pub address: String,
     pub http_client: reqwest::Client,
     pub cookie_jar: Arc<Jar>, // New!
+    pub banned_token_store: HashsetBannedTokenStore,
 }
 
 impl TestApp {
@@ -21,7 +22,7 @@ impl TestApp {
         let user_store = HashmapUserStore::default();
         let banned_token_store = HashsetBannedTokenStore::default();
 
-        let app_state = AppState::new(user_store, banned_token_store);
+        let app_state = AppState::new(user_store, banned_token_store.clone());
 
         let app = Application::build(app_state, "127.0.0.1:0")
             .await
@@ -45,6 +46,7 @@ impl TestApp {
             address,
             http_client,
             cookie_jar,
+            banned_token_store,
         }
     }
 

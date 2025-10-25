@@ -68,9 +68,8 @@ impl IntoResponse for AuthAPIError {
     fn into_response(self) -> Response {
         let (status, error_message) = match self {
             AuthAPIError::UserAlreadyExists => (StatusCode::CONFLICT, "User already exists"),
-            AuthAPIError::InvalidCredentials(_s) => {
-                // Logging/Tracing could be used here.
-                // (StatusCode::BAD_REQUEST, s.as_str())
+            AuthAPIError::InvalidCredentials(s) => {
+                tracing::warn!(msg = s.to_string());
                 (StatusCode::BAD_REQUEST, "Invalid Credentials")
             }
             Self::UserDoesNotExists => (StatusCode::NOT_FOUND, "User not found"),
@@ -80,6 +79,10 @@ impl IntoResponse for AuthAPIError {
             AuthAPIError::IncorrectCredentials => (StatusCode::NOT_FOUND, "User not found"),
             AuthAPIError::MissingToken => (StatusCode::BAD_REQUEST, "Missing token"),
             AuthAPIError::InvalidToken => (StatusCode::UNAUTHORIZED, "Invalid Token"),
+            AuthAPIError::TokenStoreError(e) => {
+                tracing::error!(msg = e.to_string());
+                (StatusCode::INTERNAL_SERVER_ERROR, "Unexpected error")
+            }
         };
         let body = Json(ErrorResponse {
             error: error_message.to_string(),

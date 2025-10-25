@@ -1,4 +1,5 @@
 use super::{Email, User};
+use thiserror::Error;
 
 #[async_trait::async_trait]
 pub trait UserStore: Clone + Send + Sync {
@@ -40,8 +41,9 @@ impl Default for BannedTokenDetails {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Error)]
 pub enum BannedTokenStoreError {
+    #[error("Unknown error")]
     UnknownError,
 }
 

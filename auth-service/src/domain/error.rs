@@ -1,6 +1,8 @@
 use crate::domain::{UserStoreError, UserValidationError};
 use thiserror::Error;
 
+use super::BannedTokenStoreError;
+
 #[derive(Debug, Clone, Error)]
 pub enum AuthAPIError {
     #[error("User already exists")]
@@ -17,6 +19,8 @@ pub enum AuthAPIError {
     MissingToken,
     #[error("Invalid token")]
     InvalidToken,
+    #[error(transparent)]
+    TokenStoreError(#[from] BannedTokenStoreError),
 }
 
 impl From<UserValidationError> for AuthAPIError {
