@@ -7,6 +7,44 @@ pub trait UserStore: Clone {
     async fn validate_user(&self, email: &Email, password: &str) -> Result<(), UserStoreError>;
 }
 
+#[async_trait::async_trait]
+pub trait BannedTokenStore {
+    async fn store(&self, token: &str) -> Result<(), BannedTokenStoreError>;
+    async fn exists(&self, token: &str) -> Result<IsBannedToken, BannedTokenStoreError>;
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum IsBannedToken {
+    NotBanned,
+    Banned(BannedTokenDetails),
+}
+
+impl From<IsBannedToken> for bool {
+    fn from(value: IsBannedToken) -> Self {
+        match value {
+            IsBannedToken::NotBanned => false,
+            IsBannedToken::Banned(_) => true,
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct BannedTokenDetails {
+    reason: &'static str,
+}
+impl Default for BannedTokenDetails {
+    fn default() -> Self {
+        Self {
+            reason: "Token is banned",
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub enum BannedTokenStoreError {
+    UnknownError,
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum UserStoreError {
     UserAlreadyExists,
