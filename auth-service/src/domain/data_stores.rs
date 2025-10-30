@@ -62,7 +62,7 @@ pub enum UserStoreError {
 #[async_trait::async_trait]
 pub trait TwoFACodeStore: Send + Sync + Clone {
     async fn add_code(
-        &mut self,
+        &self,
         email: Email,
         login_attempt_id: LoginAttemptId,
         code: TwoFACode,

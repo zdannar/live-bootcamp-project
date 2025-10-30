@@ -1,4 +1,6 @@
-use crate::domain::{BannedTokenStore, Email, Login, Password, TwoFACodeStore};
+use crate::domain::{
+    BannedTokenStore, Email, Login, LoginAttemptId, Password, TwoFACode, TwoFACodeStore,
+};
 use crate::utils::auth;
 use crate::UserStore;
 use crate::{
@@ -31,22 +33,40 @@ pub async fn login<T: UserStore, B: BannedTokenStore, F: TwoFACodeStore>(
     };
 
     match user.requires_2fa {
-        true => handle_2fa(jar).await,
+        true => handle_2fa(&user.email, &state, jar).await,
         false => handle_no_2fa(&user.email, jar).await,
     }
 }
 
-async fn handle_2fa(
+async fn handle_2fa<T: UserStore, B: BannedTokenStore, F: TwoFACodeStore>(
+    email: &Email,
+    state: &AppState<T, B, F>,
     jar: CookieJar,
 ) -> (
     CookieJar,
     Result<(StatusCode, Json<LoginResponse>), AuthAPIError>,
 ) {
+    // First, we must generate a new random login attempt ID and 2FA code
+    let login_attempt_id = LoginAttemptId::default();
+    let two_fa_code = TwoFACode::default();
+
+    // let ds = state.two_fa_code_store.add_code().await.unwrap();
+    let mut ds = state.two_fa_code_store.write().await;
+
+    match ds
+        .add_code(email.clone(), login_attempt_id.clone(), two_fa_code)
+        .await
+        .map_err(|_| AuthAPIError::UnexpectedError)
+    {
+        Ok(_) => (),
+        Err(e) => return (jar, Err(e)),
+    };
+
     let resp = (
         StatusCode::PARTIAL_CONTENT,
         Json(LoginResponse::TwoFactorAuth(TwoFactorAuthResponse {
             message: "2FA required".to_owned(),
-            login_attempt_id: ("123456").to_owned(),
+            login_attempt_id: login_attempt_id.as_ref().to_owned(),
         })),
     );
 

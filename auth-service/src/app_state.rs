@@ -6,6 +6,8 @@ use domain::UserStore;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
+// TODO: Fix this mess.  I am using interior mutability and clones with arc inside the objects.  I think I can get away from this mess.
+
 pub type TwoFACodeStoreType<T> = Arc<RwLock<T>>;
 
 #[derive(Clone)]

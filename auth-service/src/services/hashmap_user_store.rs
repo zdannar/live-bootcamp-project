@@ -8,23 +8,24 @@ use tokio::sync::RwLock;
 // TODO: This clone call bothers me.  I believe this could be an issue.  The async trait lib requires clone.
 #[derive(Default, Debug, Clone)]
 pub struct HashmapUserStore {
-    users: HashMap<Email, User>,
+    users: Arc<RwLock<HashMap<Email, User>>>,
 }
 
 #[async_trait::async_trait]
 impl UserStore for HashmapUserStore {
     async fn add_user(&mut self, user: User) -> Result<(), UserStoreError> {
-        if self.users.contains_key(&user.email) {
+        let mut users = self.users.write().await;
+        if users.contains_key(&user.email) {
             return Err(UserStoreError::UserAlreadyExists);
         }
 
-        self.users.insert(user.email.clone(), user);
+        users.insert(user.email.clone(), user);
         Ok(())
     }
 
     async fn get_user(&self, email: &Email) -> Result<User, UserStoreError> {
-        Ok(self
-            .users
+        let users = self.users.read().await;
+        Ok(users
             .get(email)
             .ok_or(UserStoreError::UserNotFound)?
             .to_owned())
@@ -64,11 +65,12 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_user() {
-        let mut user_store = HashmapUserStore::default();
+        let user_store = HashmapUserStore::default();
         // TODO: Fix unwrap
         let u = User::new(VALID_EMAIL, VALID_PASSWORD, false).unwrap();
         {
-            user_store.users.insert(u.email.clone(), u.clone());
+            let mut users = user_store.users.write().await;
+            users.insert(u.email.clone(), u.clone());
         }
         let ret_user = user_store.get_user(&u.email).await.unwrap();
         assert_eq!(u, ret_user);
