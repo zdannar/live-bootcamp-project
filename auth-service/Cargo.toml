@@ -32,3 +32,7 @@ reqwest = { version = "0.12", default-features = false, features = [
   "json",
   "cookies",
 ] }
+
+[features]
+default = []
+test-trace = []
