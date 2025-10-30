@@ -1,5 +1,60 @@
-use axum::{http::StatusCode, response::IntoResponse};
+use std::f32::consts::LOG10_2;
 
-pub async fn verify_2fa() -> impl IntoResponse {
-    StatusCode::OK.into_response()
+use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
+use axum_extra::extract::CookieJar;
+use serde::{Deserialize, Serialize};
+
+use crate::{
+    domain::{
+        BannedTokenStore, Email, EmailClient, LoginAttemptId, TwoFACode, TwoFACodeStore, UserStore,
+    },
+    AppState, AuthAPIError,
+};
+
+pub async fn verify_2fa<T: UserStore, B: BannedTokenStore, F: TwoFACodeStore, E: EmailClient>(
+    State(state): State<AppState<T, B, F, E>>,
+    Json(request): Json<Verify2FARequest>,
+) -> Result<impl IntoResponse, AuthAPIError> {
+    let code_store = state.two_fa_code_store.read().await;
+
+    let (Ok(email), Ok(login_attempt_id), Ok(two_fa_code)) = (
+        Email::parse(request.email),
+        LoginAttemptId::parse(request.login_attempt_id),
+        TwoFACode::parse(request.two_fa_code),
+    ) else {
+        return Ok(StatusCode::BAD_REQUEST);
+    };
+
+    // let Ok((store_login_attempt_id, store_two_fa_code)) = code_store.get_code(&email).await else {
+    //     return Ok(StatusCode::INTERNAL_SERVER_ERROR);
+    // };
+
+    let (store_login_attempt_id, store_two_fa_code) = match code_store.get_code(&email).await {
+        Ok(v) => v,
+        Err(crate::domain::TwoFACodeStoreError::LoginAttemptIdNotFound) => {
+            return Err(AuthAPIError::UserDoesNotExists)
+        }
+        Err(crate::domain::TwoFACodeStoreError::UnexpectedError) => {
+            return Err(AuthAPIError::UnexpectedError)
+        }
+    };
+
+    // Now verify that the login attempt lines up and two_fa_code match.
+    let status_code =
+        if login_attempt_id == store_login_attempt_id && two_fa_code == store_two_fa_code {
+            StatusCode::OK
+        } else {
+            StatusCode::UNAUTHORIZED
+        };
+
+    Ok(status_code)
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct Verify2FARequest {
+    pub email: String,
+    #[serde(rename = "loginAttemptId")]
+    pub login_attempt_id: String,
+    #[serde(rename = "2FACode")]
+    pub two_fa_code: String,
 }

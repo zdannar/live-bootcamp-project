@@ -13,12 +13,12 @@ pub struct LoginRequest<T: ToString> {
 }
 
 #[derive(serde::Deserialize, serde::Serialize)]
-pub struct Verify2FARequest<T: ToString> {
+pub struct Verify2FARequest<T: Into<String>, U: Into<String>, V: Into<String>> {
     pub email: T,
     #[serde(rename = "loginAttemptId")]
-    pub login_attempt_id: T,
+    pub login_attempt_id: U,
     #[serde(rename = "2FACode")]
-    pub two_fa_code: T,
+    pub two_fa_code: V,
 }
 
 #[derive(serde::Deserialize, serde::Serialize)]
