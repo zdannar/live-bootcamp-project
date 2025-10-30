@@ -2,14 +2,14 @@ use axum::{extract::State, http::StatusCode, response::IntoResponse};
 use axum_extra::extract::CookieJar;
 
 use crate::{
-    domain::{AuthAPIError, BannedTokenStore, UserStore},
+    domain::{AuthAPIError, BannedTokenStore, TwoFACodeStore, UserStore},
     utils::{auth::validate_token, constants::JWT_COOKIE_NAME},
     AppState,
 };
 
-pub async fn logout<T: UserStore, B: BannedTokenStore>(
+pub async fn logout<T: UserStore, B: BannedTokenStore, F: TwoFACodeStore>(
     jar: CookieJar,
-    State(state): State<AppState<T, B>>,
+    State(state): State<AppState<T, B, F>>,
 ) -> (CookieJar, Result<impl IntoResponse, AuthAPIError>) {
     let Some(cookie) = jar.get(JWT_COOKIE_NAME) else {
         return (jar, Err(AuthAPIError::MissingToken));

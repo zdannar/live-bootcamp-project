@@ -1,5 +1,6 @@
 use crate::helpers::{assert_success_and_context_type, get_random_email, TestApp};
 use crate::requests;
+use auth_service::domain::{Email, TwoFACodeStore};
 use auth_service::routes::TwoFactorAuthResponse;
 use auth_service::{utils::constants::JWT_COOKIE_NAME, ErrorResponse};
 
@@ -61,10 +62,10 @@ async fn should_return_200_if_valid_credentials_and_2fa_disabled() {
 #[tokio::test]
 async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
     let app = TestApp::new().await;
-    let random_email = get_random_email();
+    let random_email = Email::parse(get_random_email()).unwrap();
 
     let signup_body = serde_json::json!({
-        "email": random_email,
+        "email": random_email.as_ref(),
         "password": "password123",
         "requires2FA": true
     });
@@ -74,19 +75,29 @@ async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
     assert_eq!(response.status().as_u16(), 201);
 
     let login_body = serde_json::json!({
-        "email": random_email,
+        "email": random_email.as_ref(),
         "password": "password123",
     });
 
     let response = app.post_login(&login_body).await;
     assert_eq!(response.status().as_u16(), 206);
 
+    let two_fa_response = response
+        .json::<TwoFactorAuthResponse>()
+        .await
+        .expect("Could not deserialize response body to TwoFactorAuthResponse");
+
     assert_eq!(
-        response
-            .json::<TwoFactorAuthResponse>()
-            .await
-            .expect("Could not deserialize response body to TwoFactorAuthResponse")
-            .message,
-        "2FA required".to_owned()
+        two_fa_response.message,
+        "2FA required".to_owned(),
+        "->> 2FA is required failed"
+    );
+
+    println!("{:?}", app.two_fa_code_store.get_code(&random_email).await);
+
+    // TODO: assert that `json_body.login_attempt_id` is stored inside `app.two_fa_code_store`
+    assert!(
+        app.two_fa_code_store.get_code(&random_email).await.is_ok(),
+        "->> Retrieve from code store failed"
     );
 }

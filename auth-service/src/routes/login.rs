@@ -1,4 +1,4 @@
-use crate::domain::{BannedTokenStore, Email, Login, Password};
+use crate::domain::{BannedTokenStore, Email, Login, Password, TwoFACodeStore};
 use crate::utils::auth;
 use crate::UserStore;
 use crate::{
@@ -9,8 +9,8 @@ use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use axum_extra::extract::{cookie, CookieJar};
 use serde::{Deserialize, Serialize};
 
-pub async fn login<T: UserStore, B: BannedTokenStore>(
-    State(state): State<AppState<T, B>>,
+pub async fn login<T: UserStore, B: BannedTokenStore, F: TwoFACodeStore>(
+    State(state): State<AppState<T, B, F>>,
     jar: CookieJar,
     Json(request): Json<LoginRequest>,
 ) -> (CookieJar, Result<impl IntoResponse, AuthAPIError>) {

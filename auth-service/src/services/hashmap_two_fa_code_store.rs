@@ -2,7 +2,7 @@ use crate::domain::{Email, LoginAttemptId, TwoFACode, TwoFACodeStore, TwoFACodeS
 use async_trait::async_trait;
 use std::collections::HashMap;
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct HashmapTwoFACodeStore {
     codes: HashMap<Email, (LoginAttemptId, TwoFACode)>,
 }
@@ -18,6 +18,7 @@ impl TwoFACodeStore for HashmapTwoFACodeStore {
         // TODO: Note this could be an issue where a code could get overwritten.
         // Ok(self.codes.insert(email, (login_attempt_id, code)).unwrap())
         self.codes.insert(email, (login_attempt_id, code));
+        println!("I WAS CALLED?");
         Ok(())
     }
 

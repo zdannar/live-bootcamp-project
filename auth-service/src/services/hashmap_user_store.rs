@@ -5,17 +5,10 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-#[derive(Default, Debug)]
+// TODO: This clone call bothers me.  I believe this could be an issue.  The async trait lib requires clone.
+#[derive(Default, Debug, Clone)]
 pub struct HashmapUserStore {
     users: HashMap<Email, User>,
-}
-
-impl Clone for HashmapUserStore {
-    fn clone(&self) -> Self {
-        Self {
-            users: self.users.clone(),
-        }
-    }
 }
 
 #[async_trait::async_trait]
