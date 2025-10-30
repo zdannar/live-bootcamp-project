@@ -1,7 +1,5 @@
 use auth_service::{
-    services::{
-        hashmap_two_fa_code_store::HashmapTwoFACodeStore, HashmapUserStore, HashsetBannedTokenStore,
-    },
+    services::{HashmapTwoFACodeStore, HashmapUserStore, HashsetBannedTokenStore, MockEmailClient},
     AppState, Application,
 };
 use reqwest::cookie::Jar;
@@ -25,11 +23,13 @@ impl TestApp {
         let user_store = HashmapUserStore::default();
         let banned_token_store = HashsetBannedTokenStore::default();
         let two_fa_code_store = HashmapTwoFACodeStore::default();
+        let email_client = MockEmailClient::default();
 
         let app_state = AppState::new(
             user_store,
             banned_token_store.clone(),
             two_fa_code_store.clone(),
+            email_client.clone(),
         );
 
         let app = Application::build(app_state, "127.0.0.1:0")

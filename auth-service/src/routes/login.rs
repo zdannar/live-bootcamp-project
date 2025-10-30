@@ -1,5 +1,6 @@
 use crate::domain::{
-    BannedTokenStore, Email, Login, LoginAttemptId, Password, TwoFACode, TwoFACodeStore,
+    BannedTokenStore, Email, EmailClient, Login, LoginAttemptId, Password, TwoFACode,
+    TwoFACodeStore,
 };
 use crate::utils::auth;
 use crate::UserStore;
@@ -11,8 +12,8 @@ use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use axum_extra::extract::{cookie, CookieJar};
 use serde::{Deserialize, Serialize};
 
-pub async fn login<T: UserStore, B: BannedTokenStore, F: TwoFACodeStore>(
-    State(state): State<AppState<T, B, F>>,
+pub async fn login<T: UserStore, B: BannedTokenStore, F: TwoFACodeStore, E: EmailClient>(
+    State(state): State<AppState<T, B, F, E>>,
     jar: CookieJar,
     Json(request): Json<LoginRequest>,
 ) -> (CookieJar, Result<impl IntoResponse, AuthAPIError>) {
@@ -38,9 +39,9 @@ pub async fn login<T: UserStore, B: BannedTokenStore, F: TwoFACodeStore>(
     }
 }
 
-async fn handle_2fa<T: UserStore, B: BannedTokenStore, F: TwoFACodeStore>(
+async fn handle_2fa<T: UserStore, B: BannedTokenStore, F: TwoFACodeStore, E: EmailClient>(
     email: &Email,
-    state: &AppState<T, B, F>,
+    state: &AppState<T, B, F, E>,
     jar: CookieJar,
 ) -> (
     CookieJar,
@@ -51,15 +52,23 @@ async fn handle_2fa<T: UserStore, B: BannedTokenStore, F: TwoFACodeStore>(
     let two_fa_code = TwoFACode::default();
 
     // let ds = state.two_fa_code_store.add_code().await.unwrap();
-    let mut ds = state.two_fa_code_store.write().await;
+    let code_store = state.two_fa_code_store.write().await;
 
-    match ds
-        .add_code(email.clone(), login_attempt_id.clone(), two_fa_code)
+    match code_store
+        .add_code(email.clone(), login_attempt_id.clone(), two_fa_code.clone())
         .await
         .map_err(|_| AuthAPIError::UnexpectedError)
     {
         Ok(_) => (),
         Err(e) => return (jar, Err(e)),
+    };
+
+    let Ok(_email_response) = state
+        .email_client
+        .send_email(email, "Two FA Code Validation", two_fa_code.as_ref())
+        .await
+    else {
+        return (jar, Err(AuthAPIError::UnexpectedError));
     };
 
     let resp = (

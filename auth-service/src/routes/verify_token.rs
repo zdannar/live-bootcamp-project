@@ -1,12 +1,12 @@
-use crate::domain::{BannedTokenStore, TwoFACodeStore};
+use crate::domain::{BannedTokenStore, EmailClient, TwoFACodeStore};
 use crate::utils::auth;
 use crate::UserStore;
 use crate::{domain::AuthAPIError, AppState};
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use serde::{Deserialize, Serialize};
 
-pub async fn verify_token<T: UserStore, B: BannedTokenStore, F: TwoFACodeStore>(
-    State(state): State<AppState<T, B, F>>,
+pub async fn verify_token<T: UserStore, B: BannedTokenStore, F: TwoFACodeStore, E: EmailClient>(
+    State(state): State<AppState<T, B, F, E>>,
     Json(request): Json<TokenVerificationRequest>,
 ) -> Result<impl IntoResponse, AuthAPIError> {
     let Ok(_claims) = auth::validate_token(&request.token, &*state.banned_token_store).await else {

@@ -21,7 +21,7 @@ pub use domain::AuthAPIError;
 use domain::{BannedTokenStore, UserStore};
 use serde::{Deserialize, Serialize};
 
-use crate::domain::TwoFACodeStore;
+use crate::domain::{EmailClient, TwoFACodeStore};
 
 pub type UserStoreType<T> = Arc<RwLock<T>>;
 
@@ -37,8 +37,9 @@ impl Application {
         T: UserStore + 'static,
         B: BannedTokenStore + 'static,
         F: TwoFACodeStore + 'static,
+        E: EmailClient + 'static,
     >(
-        app_state: AppState<T, B, F>,
+        app_state: AppState<T, B, F, E>,
         address: &str,
     ) -> Result<Self, Box<dyn Error>> {
         let router = Router::new()

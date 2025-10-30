@@ -1,0 +1,15 @@
+FROM rust:1 AS builder
+WORKDIR /app
+COPY . /app
+RUN cargo build --release
+
+# Runtime stage - Google's distroless image
+# "static" variant has no libc - perfect for musl static binaries
+# FROM gcr.io/distroless/static-debian12 AS runtime
+FROM gcr.io/distroless/cc-debian12 as runtime
+WORKDIR /app
+# Copy the statically-linked binary
+COPY --from=builder /app/target/release/auth-service /app/auth-service
+# Copy assets folder needed by the application
+COPY --from=builder /app/assets /app/assets
+ENTRYPOINT ["/app/auth-service"]
