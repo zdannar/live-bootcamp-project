@@ -2,7 +2,7 @@ services:
   app-service:
     build:
       context: ./app-service # specify directory where local Dockerfile is located
-      dockerfile: Dockerfile.distroless-chef
+      #dockerfile: Dockerfile.distroless-chef
   auth-service:
     build:
       context: ./auth-service # specify directory where local Dockerfile is located

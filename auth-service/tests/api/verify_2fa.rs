@@ -1,5 +1,6 @@
 use auth_service::domain::{Email, TwoFACodeStore};
 use auth_service::routes::TwoFactorAuthResponse;
+use auth_service::utils::constants::JWT_COOKIE_NAME;
 
 use crate::helpers::{assert_success_and_context_type, get_random_email, TestApp};
 use crate::requests;
@@ -145,4 +146,10 @@ async fn should_return_200_if_correct_code() {
 
     let response = app.post_verify_2fa(&req).await;
     assert_success_and_context_type(&response, 200, None);
+
+    let auth_cookie = response
+        .cookies()
+        .find(|cookie| cookie.name() == JWT_COOKIE_NAME)
+        .expect("No auth cookie found");
+    assert!(!auth_cookie.value().is_empty());
 }
