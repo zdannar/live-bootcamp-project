@@ -93,10 +93,8 @@ async fn handle_no_2fa(
         return (jar, Err(AuthAPIError::UnexpectedError));
     };
 
-    let updated_jar = jar.add(auth_cookie);
-
     (
-        updated_jar,
+        jar.add(auth_cookie),
         Ok((StatusCode::OK, Json(LoginResponse::RegularAuth))),
     )
 }
