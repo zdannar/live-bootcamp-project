@@ -1,5 +1,3 @@
-use std::f32::consts::LOG10_2;
-
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use axum_extra::extract::CookieJar;
 use serde::{Deserialize, Serialize};
@@ -24,10 +22,6 @@ pub async fn verify_2fa<T: UserStore, B: BannedTokenStore, F: TwoFACodeStore, E:
     ) else {
         return Ok(StatusCode::BAD_REQUEST);
     };
-
-    // let Ok((store_login_attempt_id, store_two_fa_code)) = code_store.get_code(&email).await else {
-    //     return Ok(StatusCode::INTERNAL_SERVER_ERROR);
-    // };
 
     let (store_login_attempt_id, store_two_fa_code) = match code_store.get_code(&email).await {
         Ok(v) => v,

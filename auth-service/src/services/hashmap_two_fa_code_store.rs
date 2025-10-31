@@ -17,7 +17,6 @@ impl TwoFACodeStore for HashmapTwoFACodeStore {
         login_attempt_id: LoginAttemptId,
         code: TwoFACode,
     ) -> Result<(), TwoFACodeStoreError> {
-        println!("code inserted: {email:?}, {login_attempt_id:?}, {code:?}");
         // TODO: Note this could be an issue where a code could get overwritten.
         // Ok(self.codes.insert(email, (login_attempt_id, code)).unwrap())
 
