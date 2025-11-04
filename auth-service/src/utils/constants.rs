@@ -4,9 +4,9 @@ use std::env as std_env;
 
 // Define a lazily evaluated static. lazy_static is needed because std_env::var is not a const function.
 lazy_static! {
+    // dotenv().ok(); // Load environment variables
     pub static ref JWT_SECRET: String = set_token();
-    pub static ref DATABASE_URL: String =
-        std_env::var(env::DATABASE_URL_VAR).expect("DATABASE_URL must be set");
+    pub static ref DATABASE_URL: String = set_db_url();
 }
 
 fn set_token() -> String {
@@ -16,6 +16,15 @@ fn set_token() -> String {
         panic!("JWT_SECRET must not be empty.");
     }
     secret
+}
+
+fn set_db_url() -> String {
+    dotenv().ok(); // Load environment variables
+    let db_url = std_env::var(env::DATABASE_URL_VAR).expect("DATABASE_URL must be set.");
+    if db_url.is_empty() {
+        panic!("DATABASE_URL must not be empty.");
+    }
+    db_url
 }
 
 pub mod env {
