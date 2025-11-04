@@ -16,3 +16,20 @@ services:
       - "3000:3000" # expose port 3000 so that applications outside the container can connect to it 
     environment: # set up environment variables
       JWT_SECRET: DC+NkYEHNSMSmDpdCsWZsU4NYLr0g9vVx5OmyN1s1waplf2g4fucelS6iWXgFAuu
+      DATABASE_URL: "postgres://postgres:password@db:5432"
+    depends_on:
+      - db
+  db:
+    image: postgres:15.2-alpine
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - db:/var/lib/postgresql/data
+
+# New!
+volumes:
+  db:
+    driver: local
