@@ -1,12 +1,10 @@
-use auth_service::get_postgres_pool;
+use auth_service::configure_postgresql;
 use auth_service::services::HashmapTwoFACodeStore;
 use auth_service::services::HashmapUserStore;
 use auth_service::services::HashsetBannedTokenStore;
 use auth_service::services::MockEmailClient;
-use auth_service::utils::constants::DATABASE_URL;
 use auth_service::AppState;
 use auth_service::Application;
-use sqlx::PgPool;
 
 #[tokio::main]
 async fn main() {
@@ -28,19 +26,4 @@ async fn main() {
         .expect("Failed to build app");
 
     app.run().await.expect("Failed to run app");
-}
-
-async fn configure_postgresql() -> PgPool {
-    // Create a new database connection pool
-    let pg_pool = get_postgres_pool(&DATABASE_URL)
-        .await
-        .expect("Failed to create Postgres connection pool!");
-
-    // Run database migrations against our test database!
-    sqlx::migrate!()
-        .run(&pg_pool)
-        .await
-        .expect("Failed to run migrations");
-
-    pg_pool
 }

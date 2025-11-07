@@ -20,10 +20,13 @@ use axum::{
     Json, Router,
 };
 pub use domain::AuthAPIError;
-use domain::{BannedTokenStore, UserStore};
+use domain::{BannedTokenStore, UserStore, UserStoreError};
 use serde::{Deserialize, Serialize};
 
-use crate::domain::{EmailClient, TwoFACodeStore};
+use crate::{
+    domain::{EmailClient, TwoFACodeStore},
+    utils::constants::DATABASE_URL,
+};
 
 pub type UserStoreType<T> = Arc<RwLock<T>>;
 
@@ -104,4 +107,19 @@ impl IntoResponse for AuthAPIError {
 pub async fn get_postgres_pool(url: &str) -> Result<PgPool, sqlx::Error> {
     // Create a new PostgreSQL connection pool
     PgPoolOptions::new().max_connections(5).connect(url).await
+}
+
+pub async fn configure_postgresql() -> PgPool {
+    // Create a new database connection pool
+    let pg_pool = get_postgres_pool(&DATABASE_URL)
+        .await
+        .expect("Failed to create Postgres connection pool!");
+
+    // Run database migrations against our test database!
+    sqlx::migrate!()
+        .run(&pg_pool)
+        .await
+        .expect("Failed to run migrations");
+
+    pg_pool
 }

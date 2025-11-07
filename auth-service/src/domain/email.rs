@@ -24,3 +24,9 @@ impl AsRef<str> for Email {
         &self.addr
     }
 }
+
+impl From<String> for Email {
+    fn from(value: String) -> Self {
+        Email { addr: value }
+    }
+}

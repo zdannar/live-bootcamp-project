@@ -8,6 +8,18 @@ pub struct Password {
     value: String,
 }
 
+impl From<String> for Password {
+    fn from(value: String) -> Self {
+        Self { value }
+    }
+}
+
+impl Into<String> for Password {
+    fn into(self) -> String {
+        self.value.to_string()
+    }
+}
+
 fn validate_password(password: &str) -> Result<(), ValidationError> {
     if password == "12345678" {
         // the value of the username will automatically be added later

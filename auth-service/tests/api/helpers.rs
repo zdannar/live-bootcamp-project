@@ -1,7 +1,12 @@
+use auth_service::configure_postgresql;
 use auth_service::{
-    services::{HashmapTwoFACodeStore, HashmapUserStore, HashsetBannedTokenStore, MockEmailClient},
+    services::{
+        HashmapTwoFACodeStore, HashsetBannedTokenStore, MockEmailClient, PostgresUserStore,
+    },
     AppState, Application,
 };
+use rand::distributions::Alphanumeric;
+use rand::prelude::*;
 use reqwest::cookie::Jar;
 use std::sync::Arc;
 
@@ -20,7 +25,12 @@ impl TestApp {
             .with_max_level(tracing::Level::DEBUG)
             .init();
 
-        let user_store = HashmapUserStore::default();
+        // let user_store = HashmapUserStore::default();
+
+        let pg_pool = configure_postgresql().await;
+        // let user_store = Arc::new(RwLock::new(PostgresUserStore::new(pg_pool)));
+        let user_store = PostgresUserStore::new(pg_pool);
+
         let banned_token_store = HashsetBannedTokenStore::default();
         let two_fa_code_store = HashmapTwoFACodeStore::default();
         let email_client = MockEmailClient::default();
@@ -125,7 +135,13 @@ impl TestApp {
 }
 
 pub fn get_random_email() -> String {
-    "grover@example.com".into()
+    let length = 10; // Desired length of the random string
+    let random_string: String = thread_rng()
+        .sample_iter(Alphanumeric)
+        .take(length)
+        .map(char::from)
+        .collect();
+    format!("{random_string}@something.com")
 }
 
 static APPLICATION_JSON: &str = "application/json";

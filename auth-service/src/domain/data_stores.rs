@@ -120,8 +120,8 @@ impl TwoFACode {
 
 impl Default for TwoFACode {
     fn default() -> Self {
-        let mut rng = rand::rng();
-        let rnum = rng.random_range(1..=MAX_CODE_VAUE);
+        let mut rng = rand::thread_rng();
+        let rnum = rng.gen_range(1..=MAX_CODE_VAUE);
         Self(format!("{rnum:06}"))
     }
 }
