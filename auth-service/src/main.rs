@@ -1,16 +1,17 @@
 use auth_service::configure_postgresql;
 use auth_service::services::HashmapTwoFACodeStore;
-use auth_service::services::HashmapUserStore;
 use auth_service::services::HashsetBannedTokenStore;
 use auth_service::services::MockEmailClient;
+use auth_service::services::PostgresUserStore;
 use auth_service::AppState;
 use auth_service::Application;
 
 #[tokio::main]
 async fn main() {
     let pg_pool = configure_postgresql().await;
+    let user_store = PostgresUserStore::new(pg_pool);
 
-    let user_store = HashmapUserStore::default();
+    // let user_store = HashmapUserStore::default();
     let banned_token_store = HashsetBannedTokenStore::default();
     let two_fa_code_store = HashmapTwoFACodeStore::default();
     let email_client = MockEmailClient::default();

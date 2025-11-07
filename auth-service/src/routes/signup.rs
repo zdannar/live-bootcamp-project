@@ -47,10 +47,14 @@ pub struct SignupRequest {
 }
 
 impl SignupRequest {
-    pub fn new<T: ToString>(email: T, password: T, requires_2fa: bool) -> Self {
+    pub fn new<T: Into<String>, U: Into<String>>(
+        email: T,
+        password: U,
+        requires_2fa: bool,
+    ) -> Self {
         Self {
-            email: email.to_string(),
-            password: password.to_string(),
+            email: email.into(),
+            password: password.into(),
             requires_2fa,
         }
     }

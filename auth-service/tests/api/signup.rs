@@ -53,13 +53,22 @@ async fn should_return_400_if_invalid_input() {
 async fn should_return_409_if_email_already_exists() {
     let app = TestApp::new().await;
     // Call the signup route twice. The second request should fail with a 409 HTTP status code
-    let signup_request = SignupRequest::new(VALID_EMAIL, VALID_PASSWORD, false);
+    let signup_request = SignupRequest::new(&get_random_email(), VALID_PASSWORD, false);
 
     let mut response = app.post_signup(&signup_request).await;
-    assert_success_and_context_type(&response, 201, None);
+    // assert_success_and_context_type(&response, 201, None);
+    assert_eq!(
+        response.status().as_u16(),
+        201,
+        "Email should not exist in database"
+    );
 
     response = app.post_signup(&signup_request).await;
-    assert_eq!(response.status().as_u16(), 409);
+    assert_eq!(
+        response.status().as_u16(),
+        409,
+        "Email should already exist in database"
+    );
 
     response = app.post_signup(&signup_request).await;
     let round_two = response.json::<serde_json::Value>().await;
