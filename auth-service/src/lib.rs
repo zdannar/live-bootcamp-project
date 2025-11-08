@@ -1,3 +1,4 @@
+use redis::Client;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::PgPool;
 use std::error::Error;
@@ -20,7 +21,7 @@ use axum::{
     Json, Router,
 };
 pub use domain::AuthAPIError;
-use domain::{BannedTokenStore, UserStore, UserStoreError};
+use domain::{BannedTokenStore, BannedTokenStoreError, UserStore, UserStoreError};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -122,4 +123,9 @@ pub async fn configure_postgresql() -> PgPool {
         .expect("Failed to run migrations");
 
     pg_pool
+}
+
+pub fn get_redis_client(redis_hostname: String) -> redis::RedisResult<Client> {
+    let redis_url = format!("redis://{}/", redis_hostname);
+    redis::Client::open(redis_url)
 }

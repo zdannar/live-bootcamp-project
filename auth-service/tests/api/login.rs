@@ -2,7 +2,7 @@ use crate::helpers::{assert_success_and_context_type, get_random_email, TestApp}
 use crate::requests;
 use auth_service::domain::{Email, TwoFACodeStore};
 use auth_service::routes::TwoFactorAuthResponse;
-use auth_service::{utils::constants::JWT_COOKIE_NAME, ErrorResponse};
+use auth_service::utils::constants::JWT_COOKIE_NAME;
 use sqlx::PgPool;
 
 #[sqlx::test]

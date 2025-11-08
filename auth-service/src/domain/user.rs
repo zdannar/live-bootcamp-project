@@ -1,7 +1,8 @@
 use crate::domain::{Email, Password};
+use sqlx::FromRow;
 use thiserror::Error;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, FromRow)]
 pub struct User {
     pub email: Email,
     pub password: Password,

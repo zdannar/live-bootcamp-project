@@ -20,6 +20,7 @@ async fn should_return_200_valid_token(pool: PgPool) {
         token: generate_auth_token(&email).unwrap(),
     };
     let response = app.post_verify_token(&request).await;
+    println!("\n\nREsponse> {response:?}");
     assert_success_and_context_type(&response, 200, None);
 }
 

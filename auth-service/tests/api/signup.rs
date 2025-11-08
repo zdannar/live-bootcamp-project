@@ -1,6 +1,5 @@
 use crate::helpers::{assert_success_and_context_type, get_random_email, TestApp};
 use auth_service::routes::{SignupRequest, SignupResponse};
-use auth_service::AuthAPIError;
 use auth_service::ErrorResponse;
 use sqlx::PgPool;
 

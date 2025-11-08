@@ -1,4 +1,6 @@
 use serde::Deserialize;
+use sqlx::postgres::{PgTypeInfo, PgValueRef};
+use sqlx::{Decode, Postgres, Type};
 use std::convert::AsRef;
 use validator::{Validate, ValidationError, ValidationErrors};
 
@@ -6,6 +8,19 @@ use validator::{Validate, ValidationError, ValidationErrors};
 pub struct Password {
     #[validate(length(min = 8), custom(function = "validate_password"))]
     value: String,
+}
+
+impl Type<Postgres> for Password {
+    fn type_info() -> PgTypeInfo {
+        <String as Type<Postgres>>::type_info()
+    }
+}
+
+impl<'r> Decode<'r, Postgres> for Password {
+    fn decode(value: PgValueRef<'r>) -> Result<Self, sqlx::error::BoxDynError> {
+        let s = <String as Decode<Postgres>>::decode(value)?;
+        Ok(Password { value: s })
+    }
 }
 
 impl From<String> for Password {

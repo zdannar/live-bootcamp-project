@@ -7,3 +7,7 @@ services:
     build:
       context: ./auth-service # specify directory where local Dockerfile is located
       dockerfile: Dockerfile.distroless-chef
+      args: 
+        DATABASE_URL: "postgres://postgres:password@db:5432"
+
+      

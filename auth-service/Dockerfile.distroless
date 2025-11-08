@@ -1,6 +1,8 @@
 FROM rust:1 AS builder
 WORKDIR /app
 COPY . /app
+ARG DATABASE_URL
+ENV DATABASE_URL=DATABASE_URL
 RUN cargo build --release
 
 # Runtime stage - Google's distroless image

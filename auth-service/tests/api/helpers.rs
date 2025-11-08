@@ -1,29 +1,20 @@
-use auth_service::configure_postgresql;
-use auth_service::utils::constants::DATABASE_URL;
 use auth_service::{
-    services::{
-        HashmapTwoFACodeStore, HashsetBannedTokenStore, MockEmailClient, PostgresUserStore,
-    },
+    services::{HashmapTwoFACodeStore, MockEmailClient, PostgresUserStore, RedisBannedTokenStore},
+    utils::constants::REDIS_HOST_NAME,
     AppState, Application,
 };
 use rand::distributions::Alphanumeric;
 use rand::prelude::*;
 use reqwest::cookie::Jar;
-use sqlx::postgres::PgConnectOptions;
-use sqlx::Executor;
-use sqlx::{Connection, PgConnection, PgPool};
-use std::str::FromStr;
+use sqlx::PgPool;
 use std::sync::Arc;
-use uuid::Uuid;
 
 pub struct TestApp {
     pub address: String,
     pub http_client: reqwest::Client,
     pub cookie_jar: Arc<Jar>, // New!
-    pub banned_token_store: HashsetBannedTokenStore,
+    pub banned_token_store: RedisBannedTokenStore,
     pub two_fa_code_store: HashmapTwoFACodeStore,
-    pub database_name: String,
-    pub cleanup_called: bool,
 }
 
 impl TestApp {
@@ -39,7 +30,10 @@ impl TestApp {
         // let user_store = Arc::new(RwLock::new(PostgresUserStore::new(pg_pool)));
         let user_store = PostgresUserStore::new(pg_pool);
 
-        let banned_token_store = HashsetBannedTokenStore::default();
+        // let banned_token_store = HashsetBannedTokenStore::default();
+        //
+        let redis_client = auth_service::get_redis_client(REDIS_HOST_NAME.to_string()).unwrap();
+        let banned_token_store = RedisBannedTokenStore::new(redis_client);
         let two_fa_code_store = HashmapTwoFACodeStore::default();
         let email_client = MockEmailClient::default();
 
@@ -74,8 +68,6 @@ impl TestApp {
             cookie_jar,
             banned_token_store,
             two_fa_code_store,
-            database_name: Uuid::new_v4().to_string(),
-            cleanup_called: false,
         }
     }
 
@@ -142,56 +134,7 @@ impl TestApp {
             .await
             .expect("Failed to execute request.")
     }
-
-    // pub async fn cleanp(&mut self) {
-    //     delete_database(&self.database_name).await;
-    //     self.cleanup_called = true
-    // }
 }
-
-// impl Drop for TestApp {
-//     fn drop(&mut self) {
-//         if !self.cleanup_called {
-//             panic!("Cleanup not called!")
-//         } else {
-//             ()
-//         }
-//     }
-// }
-
-// async fn delete_database(db_name: &str) {
-//     let postgresql_conn_url: String = DATABASE_URL.to_owned();
-
-//     let connection_options = PgConnectOptions::from_str(&postgresql_conn_url)
-//         .expect("Failed to parse PostgreSQL connection string");
-
-//     let mut connection = PgConnection::connect_with(&connection_options)
-//         .await
-//         .expect("Failed to connect to Postgres");
-
-//     // Kill any active connections to the database
-//     connection
-//         .execute(
-//             format!(
-//                 r#"
-//                 SELECT pg_terminate_backend(pg_stat_activity.pid)
-//                 FROM pg_stat_activity
-//                 WHERE pg_stat_activity.datname = '{}'
-//                   AND pid <> pg_backend_pid();
-//         "#,
-//                 db_name
-//             )
-//             .as_str(),
-//         )
-//         .await
-//         .expect("Failed to drop the database.");
-
-//     // Drop the database
-//     connection
-//         .execute(format!(r#"DROP DATABASE "{}";"#, db_name).as_str())
-//         .await
-//         .expect("Failed to drop the database.");
-// }
 
 pub fn get_random_email() -> String {
     let length = 10; // Desired length of the random string
@@ -203,7 +146,7 @@ pub fn get_random_email() -> String {
     format!("{random_string}@something.com")
 }
 
-static APPLICATION_JSON: &str = "application/json";
+//static APPLICATION_JSON: &str = "application/json";
 pub fn assert_success_and_context_type(
     response: &reqwest::Response,
     status_code: u16,

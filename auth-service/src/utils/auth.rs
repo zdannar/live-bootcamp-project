@@ -65,13 +65,11 @@ pub async fn validate_token<B: BannedTokenStore>(
     banned_token_store: &B,
     // ) -> Result<Claims, jsonwebtoken::errors::Error> {
 ) -> Result<Claims, AuthAPIError> {
-    // TODO: Fix this.
-
-    let j = match banned_token_store.exists(token).await {
+    let _j = match banned_token_store.exists(token).await {
         Ok(crate::domain::IsBannedToken::Banned(_)) => {
             return Err(AuthAPIError::InvalidToken);
         }
-        Err(e) => {
+        Err(_e) => {
             return Err(AuthAPIError::UnexpectedError);
         }
         _ => (),

@@ -29,7 +29,6 @@ async fn should_return_400_if_invalid_input(pool: PgPool) {
 }
 
 #[sqlx::test]
-
 async fn should_return_401_if_incorrect_credentials(pool: PgPool) {
     // TODO: This should be a helper function to:
     // - sign up

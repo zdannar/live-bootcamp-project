@@ -67,16 +67,18 @@ impl UserStore for PostgresUserStore {
     }
 
     async fn get_user(&self, email: &Email) -> Result<User, UserStoreError> {
-        let u: User = sqlx::query_as!(
-            User,
+        let u: User = sqlx::query_as(
             "SELECT email, password_hash as password, requires_2fa FROM users WHERE email = $1",
-            email.as_ref()
         )
+        .bind(email.as_ref())
         .fetch_one(&self.pool)
         .await
         .map_err(|e| match e {
             sqlx::Error::RowNotFound => UserStoreError::UserNotFound,
-            _ => UserStoreError::UnexpectedError,
+            e => {
+                println!("Error!: {e:?}");
+                UserStoreError::UnexpectedError
+            }
         })?;
         Ok(u)
     }
@@ -149,11 +151,11 @@ mod test {
         let mut store = PostgresUserStore::new(pool);
         let user = User::new("some_email@something.com", "thisismypassword", false).unwrap();
 
-        assert!(store.add_user(user.clone()).await.is_ok());
+        assert!(store.add_user(user.clone()).await.is_ok(), "Adding user");
 
         let nu = store.get_user(&user.email).await.unwrap();
 
-        assert_eq!(user.email, nu.email, "user emails are equal");
+        assert_eq!(user.email, nu.email, "user emails are equal",);
         assert_ne!(
             user.password, nu.password,
             "user passwords are not equal due to hashing"

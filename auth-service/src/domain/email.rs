@@ -1,4 +1,6 @@
 use serde::Deserialize;
+use sqlx::postgres::{PgTypeInfo, PgValueRef};
+use sqlx::{Decode, Postgres, Type};
 use std::convert::AsRef;
 use std::hash::Hash;
 use validator::{Validate, ValidationErrors};
@@ -7,6 +9,19 @@ use validator::{Validate, ValidationErrors};
 pub struct Email {
     #[validate(email)]
     addr: String,
+}
+
+impl Type<Postgres> for Email {
+    fn type_info() -> PgTypeInfo {
+        <String as Type<Postgres>>::type_info()
+    }
+}
+
+impl<'r> Decode<'r, Postgres> for Email {
+    fn decode(value: PgValueRef<'r>) -> Result<Self, sqlx::error::BoxDynError> {
+        let s = <String as Decode<Postgres>>::decode(value)?;
+        Ok(Email { addr: s })
+    }
 }
 
 impl Email {

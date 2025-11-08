@@ -1,5 +1,4 @@
 use crate::domain;
-use crate::domain::Email;
 use crate::domain::EmailClient;
 use crate::UserStoreType;
 use domain::BannedTokenStore;

@@ -49,6 +49,8 @@ impl Default for BannedTokenDetails {
 pub enum BannedTokenStoreError {
     #[error("Unknown error")]
     UnknownError,
+    #[error("Error with storage: {0}")]
+    StoreError(String),
 }
 
 #[derive(Debug, Clone, PartialEq)]
