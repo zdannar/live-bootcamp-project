@@ -3,20 +3,21 @@ use crate::requests;
 use auth_service::domain::{Email, TwoFACodeStore};
 use auth_service::routes::TwoFactorAuthResponse;
 use auth_service::{utils::constants::JWT_COOKIE_NAME, ErrorResponse};
+use sqlx::PgPool;
 
-#[tokio::test]
-async fn should_return_422_if_malformed_credentials() {
+#[sqlx::test]
+async fn should_return_422_if_malformed_credentials(pool: PgPool) {
     let jdata = serde_json::json!(r#"{"x": "y"}"#);
-    let app = TestApp::new().await;
+    let app = TestApp::new(pool).await;
     let response = app.post_login(&jdata).await;
     assert_success_and_context_type(&response, 422, None);
 }
 
-#[tokio::test]
-async fn should_return_400_if_invalid_input() {
+#[sqlx::test]
+async fn should_return_400_if_invalid_input(pool: PgPool) {
     // Call the log-in route with invalid credentials and assert that a
     // 400 HTTP status code is returned along with the appropriate error message.
-    let app = TestApp::new().await;
+    let app = TestApp::new(pool).await;
     let response = app
         .post_login(&requests::LoginRequest {
             email: "something@somewhere.com",
@@ -26,9 +27,9 @@ async fn should_return_400_if_invalid_input() {
     assert_success_and_context_type(&response, 400, None);
 }
 
-#[tokio::test]
-async fn should_return_200_if_valid_credentials_and_2fa_disabled() {
-    let app = TestApp::new().await;
+#[sqlx::test]
+async fn should_return_200_if_valid_credentials_and_2fa_disabled(pool: PgPool) {
+    let app = TestApp::new(pool).await;
 
     let random_email = get_random_email();
 
@@ -59,9 +60,9 @@ async fn should_return_200_if_valid_credentials_and_2fa_disabled() {
     assert!(!auth_cookie.value().is_empty());
 }
 
-#[tokio::test]
-async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
-    let app = TestApp::new().await;
+#[sqlx::test]
+async fn should_return_206_if_valid_credentials_and_2fa_enabled(pool: PgPool) {
+    let app = TestApp::new(pool).await;
     let random_email = Email::parse(get_random_email()).unwrap();
 
     let signup_body = serde_json::json!({

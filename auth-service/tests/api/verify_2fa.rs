@@ -1,21 +1,22 @@
 use auth_service::domain::{Email, TwoFACodeStore};
 use auth_service::routes::TwoFactorAuthResponse;
 use auth_service::utils::constants::JWT_COOKIE_NAME;
+use sqlx::PgPool;
 
 use crate::helpers::{assert_success_and_context_type, get_random_email, TestApp};
 use crate::requests;
 
-#[tokio::test]
-async fn should_return_422_if_malformed_input() {
-    let app = TestApp::new().await;
+#[sqlx::test]
+async fn should_return_422_if_malformed_input(pool: PgPool) {
+    let app = TestApp::new(pool).await;
     let response = app.post_verify_2fa(&serde_json::json!("MALFORMED!")).await;
     assert_success_and_context_type(&response, 422, None);
 }
 
-#[tokio::test]
-async fn should_return_400_if_invalid_input() {
+#[sqlx::test]
+async fn should_return_400_if_invalid_input(pool: PgPool) {
     let random_email = get_random_email();
-    let app = TestApp::new().await;
+    let app = TestApp::new(pool).await;
 
     let req = requests::Verify2FARequest {
         email: random_email,
@@ -27,13 +28,14 @@ async fn should_return_400_if_invalid_input() {
     assert_success_and_context_type(&response, 400, None);
 }
 
-#[tokio::test]
-async fn should_return_401_if_incorrect_credentials() {
+#[sqlx::test]
+
+async fn should_return_401_if_incorrect_credentials(pool: PgPool) {
     // TODO: This should be a helper function to:
     // - sign up
     // - Login
 
-    let app = TestApp::new().await;
+    let app = TestApp::new(pool).await;
     let random_email = Email::parse(get_random_email()).unwrap();
 
     let signup_body = serde_json::json!({
@@ -65,10 +67,10 @@ async fn should_return_401_if_incorrect_credentials() {
     assert_success_and_context_type(&response, 401, None);
 }
 
-#[tokio::test]
-async fn should_return_401_if_old_code() {
+#[sqlx::test]
+async fn should_return_401_if_old_code(pool: PgPool) {
     // Call login twice. Then, attempt to call verify-fa with the 2FA code from the first login requet. This should fail.
-    let app = TestApp::new().await;
+    let app = TestApp::new(pool).await;
     let random_email = Email::parse(get_random_email()).unwrap();
 
     let signup_body = serde_json::json!({
@@ -108,11 +110,11 @@ async fn should_return_401_if_old_code() {
     assert_success_and_context_type(&response, 401, None);
 }
 
-#[tokio::test]
-async fn should_return_200_if_correct_code() {
+#[sqlx::test]
+async fn should_return_200_if_correct_code(pool: PgPool) {
     // Make sure to assert the auth cookie gets set
 
-    let app = TestApp::new().await;
+    let app = TestApp::new(pool).await;
     let random_email = Email::parse(get_random_email()).unwrap();
 
     let signup_body = serde_json::json!({

@@ -2,17 +2,19 @@ use crate::helpers::{assert_success_and_context_type, get_random_email, TestApp}
 use auth_service::domain::{BannedTokenStore, Email};
 use auth_service::utils::{auth, constants::JWT_COOKIE_NAME};
 use reqwest::Url;
+use sqlx::PgPool;
 
-#[tokio::test]
-async fn should_return_400_if_jwt_cookie_missing() {
-    let app = TestApp::new().await;
+#[sqlx::test]
+async fn should_return_400_if_jwt_cookie_missing(pool: PgPool) {
+    let app = TestApp::new(pool).await;
     let response = app.post_logout().await;
     assert_success_and_context_type(&response, 400, None);
 }
 
-#[tokio::test]
-async fn should_return_401_if_invalid_token() {
-    let app = TestApp::new().await;
+#[sqlx::test]
+
+async fn should_return_401_if_invalid_token(pool: PgPool) {
+    let app = TestApp::new(pool).await;
 
     // add invalid cookie
     app.cookie_jar.add_cookie_str(
@@ -27,9 +29,9 @@ async fn should_return_401_if_invalid_token() {
     assert_success_and_context_type(&response, 401, None);
 }
 
-#[tokio::test]
-async fn logout_return_200() {
-    let app = TestApp::new().await;
+#[sqlx::test]
+async fn logout_return_200(pool: PgPool) {
+    let app = TestApp::new(pool).await;
 
     let valid_token =
         auth::generate_auth_token(&Email::parse(get_random_email()).unwrap()).unwrap();

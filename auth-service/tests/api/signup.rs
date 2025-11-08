@@ -2,15 +2,17 @@ use crate::helpers::{assert_success_and_context_type, get_random_email, TestApp}
 use auth_service::routes::{SignupRequest, SignupResponse};
 use auth_service::AuthAPIError;
 use auth_service::ErrorResponse;
+use sqlx::PgPool;
 
 const VALID_PASSWORD: &str = "validpassword";
 const INVALID_PASSWORD: &str = "invalid";
 const VALID_EMAIL: &str = "chuck@chuck.com";
 const INVALID_EMAIL: &str = "chuck.chuck.com";
 
-#[tokio::test]
-async fn should_return_201_if_valid_input() {
-    let app = TestApp::new().await;
+#[sqlx::test]
+
+async fn should_return_201_if_valid_input(pool: PgPool) {
+    let app = TestApp::new(pool).await;
     let response = app
         .post_signup(&SignupRequest {
             email: get_random_email(),
@@ -34,14 +36,14 @@ async fn should_return_201_if_valid_input() {
     );
 }
 
-#[tokio::test]
-async fn should_return_400_if_invalid_input() {
+#[sqlx::test]
+async fn should_return_400_if_invalid_input(pool: PgPool) {
     let invalid_signup_requests = [
         SignupRequest::new(INVALID_EMAIL, VALID_PASSWORD, false),
         SignupRequest::new(VALID_EMAIL, INVALID_PASSWORD, false),
     ];
 
-    let app = TestApp::new().await;
+    let app = TestApp::new(pool).await;
 
     for signup_request in invalid_signup_requests.iter() {
         let response = app.post_signup(signup_request).await;
@@ -49,9 +51,10 @@ async fn should_return_400_if_invalid_input() {
     }
 }
 
-#[tokio::test]
-async fn should_return_409_if_email_already_exists() {
-    let app = TestApp::new().await;
+#[sqlx::test]
+
+async fn should_return_409_if_email_already_exists(pool: PgPool) {
+    let app = TestApp::new(pool).await;
     // Call the signup route twice. The second request should fail with a 409 HTTP status code
     let signup_request = SignupRequest::new(&get_random_email(), VALID_PASSWORD, false);
 
