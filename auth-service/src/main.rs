@@ -12,14 +12,11 @@ async fn main() {
     let pg_pool = configure_postgresql().await;
     let user_store = PostgresUserStore::new(pg_pool);
 
-    // let redis_client = configure_redis();
     let redis_client = auth_service::get_redis_client(REDIS_HOST_NAME.to_string()).unwrap();
     let banned_token_store = RedisBannedTokenStore::new(redis_client);
 
-    // let user_store = HashmapUserStore::default();
-    // let banned_token_store = HashsetBannedTokenStore::default();
     let two_fa_code_store = HashmapTwoFACodeStore::default();
-    let email_client = MockEmailClient::default();
+    let email_client = MockEmailClient;
     let app_state = AppState::new(
         user_store,
         banned_token_store,

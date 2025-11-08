@@ -29,9 +29,15 @@ impl From<String> for Password {
     }
 }
 
-impl Into<String> for Password {
-    fn into(self) -> String {
-        self.value.to_string()
+// impl Into<String> for Password {
+//     fn into(self) -> String {
+//         self.value.to_string()
+//     }
+// }
+
+impl From<Password> for String {
+    fn from(value: Password) -> Self {
+        value.value.to_string()
     }
 }
 

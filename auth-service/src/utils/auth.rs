@@ -63,20 +63,12 @@ pub fn generate_auth_token(email: &Email) -> Result<String, GenerateTokenError> 
 pub async fn validate_token<B: BannedTokenStore>(
     token: &str,
     banned_token_store: &B,
-    // ) -> Result<Claims, jsonwebtoken::errors::Error> {
 ) -> Result<Claims, AuthAPIError> {
-    let _j = match banned_token_store.exists(token).await {
-        Ok(crate::domain::IsBannedToken::Banned(_)) => {
-            return Err(AuthAPIError::InvalidToken);
-        }
-        Err(_e) => {
-            return Err(AuthAPIError::UnexpectedError);
-        }
-        _ => (),
-    };
-
-    // TODO: These errors are getting weird.
-    Ok(validate_jwt_token(token).map_err(|_e| AuthAPIError::InvalidToken)?)
+    match banned_token_store.exists(token).await {
+        Ok(crate::domain::IsBannedToken::Banned(_)) => Err(AuthAPIError::InvalidToken),
+        Err(_e) => Err(AuthAPIError::UnexpectedError),
+        _ => validate_jwt_token(token).map_err(|_e| AuthAPIError::InvalidToken),
+    }
 }
 
 pub fn validate_jwt_token(token: &str) -> Result<Claims, jsonwebtoken::errors::Error> {

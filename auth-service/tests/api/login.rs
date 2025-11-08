@@ -96,7 +96,6 @@ async fn should_return_206_if_valid_credentials_and_2fa_enabled(pool: PgPool) {
 
     println!("{:?}", app.two_fa_code_store.get_code(&random_email).await);
 
-    // TODO: assert that `json_body.login_attempt_id` is stored inside `app.two_fa_code_store`
     assert!(
         app.two_fa_code_store.get_code(&random_email).await.is_ok(),
         "->> Retrieve from code store failed"

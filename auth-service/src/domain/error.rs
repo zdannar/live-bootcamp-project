@@ -41,7 +41,9 @@ impl From<UserStoreError> for AuthAPIError {
             UserStoreError::UserAlreadyExists => Self::UserAlreadyExists,
             UserStoreError::UserNotFound => Self::IncorrectCredentials,
             // TODO: Fix
-            UserStoreError::InvalidCredentials => Self::InvalidCredentials("asdf".to_string()),
+            UserStoreError::InvalidCredentials => {
+                Self::InvalidCredentials("Invalid Credentials".to_string())
+            }
             UserStoreError::UnexpectedError => Self::UnexpectedError,
         }
     }

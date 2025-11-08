@@ -15,7 +15,7 @@ pub async fn login<T: UserStore, B: BannedTokenStore, F: TwoFACodeStore, E: Emai
 ) -> (CookieJar, Result<impl IntoResponse, AuthAPIError>) {
     // OK.  I need to valate the credentails.
     let login = match Login::try_from(request) {
-        Err(e) => return (jar, Err(e.into())),
+        Err(e) => return (jar, Err(e)),
         Ok(l) => l,
     };
 
@@ -85,7 +85,7 @@ async fn handle_no_2fa(
     CookieJar,
     Result<(StatusCode, Json<LoginResponse>), AuthAPIError>,
 ) {
-    let Ok(auth_cookie) = auth::generate_auth_cookie(&email) else {
+    let Ok(auth_cookie) = auth::generate_auth_cookie(email) else {
         return (jar, Err(AuthAPIError::UnexpectedError));
     };
 
