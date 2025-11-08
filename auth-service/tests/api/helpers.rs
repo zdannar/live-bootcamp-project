@@ -1,5 +1,5 @@
 use auth_service::{
-    services::{HashmapTwoFACodeStore, MockEmailClient, PostgresUserStore, RedisBannedTokenStore},
+    services::{MockEmailClient, PostgresUserStore, RedisBannedTokenStore, RedisTwoFACodeStore},
     utils::constants::REDIS_HOST_NAME,
     AppState, Application,
 };
@@ -14,7 +14,7 @@ pub struct TestApp {
     pub http_client: reqwest::Client,
     pub cookie_jar: Arc<Jar>, // New!
     pub banned_token_store: RedisBannedTokenStore,
-    pub two_fa_code_store: HashmapTwoFACodeStore,
+    pub two_fa_code_store: RedisTwoFACodeStore,
 }
 
 impl TestApp {
@@ -25,16 +25,10 @@ impl TestApp {
             .with_max_level(tracing::Level::DEBUG)
             .init();
 
-        // let user_store = HashmapUserStore::default();
-
-        // let user_store = Arc::new(RwLock::new(PostgresUserStore::new(pg_pool)));
         let user_store = PostgresUserStore::new(pg_pool);
-
-        // let banned_token_store = HashsetBannedTokenStore::default();
-        //
         let redis_client = auth_service::get_redis_client(REDIS_HOST_NAME.to_string()).unwrap();
-        let banned_token_store = RedisBannedTokenStore::new(redis_client);
-        let two_fa_code_store = HashmapTwoFACodeStore::default();
+        let banned_token_store = RedisBannedTokenStore::new(redis_client.clone());
+        let two_fa_code_store = RedisTwoFACodeStore::new(redis_client);
         let email_client = MockEmailClient::default();
 
         let app_state = AppState::new(

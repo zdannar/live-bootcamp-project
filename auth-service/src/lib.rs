@@ -25,7 +25,7 @@ use domain::{BannedTokenStore, BannedTokenStoreError, UserStore, UserStoreError}
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    domain::{EmailClient, TwoFACodeStore},
+    domain::{EmailClient, TwoFACodeStore, TwoFACodeStoreError},
     utils::constants::DATABASE_URL,
 };
 
