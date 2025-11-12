@@ -32,6 +32,7 @@ sqlx = { version = "0.8.6", features = [
 ] }
 argon2 = { version = "0.5.3", features = ["std"] }
 redis = { version = "0.32.7", features = ["tokio-comp"] }
+color-eyre = "0.6.5"
 
 [dev-dependencies]
 fake = "=2.3.0"
