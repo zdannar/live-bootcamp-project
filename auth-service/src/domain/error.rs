@@ -1,9 +1,10 @@
 use crate::domain::{UserStoreError, UserValidationError};
+use color_eyre::eyre::Report;
 use thiserror::Error;
 
 use super::BannedTokenStoreError;
 
-#[derive(Debug, Clone, Error)]
+#[derive(Debug, Error)]
 pub enum AuthAPIError {
     #[error("User already exists")]
     UserAlreadyExists,
@@ -12,7 +13,7 @@ pub enum AuthAPIError {
     #[error("User does not exist")]
     UserDoesNotExists,
     #[error("Unexpected error")]
-    UnexpectedError,
+    UnexpectedError(#[source] Report),
     #[error("incorrect credentials")]
     IncorrectCredentials,
     #[error("missing token")]
@@ -44,7 +45,7 @@ impl From<UserStoreError> for AuthAPIError {
             UserStoreError::InvalidCredentials => {
                 Self::InvalidCredentials("Invalid Credentials".to_string())
             }
-            UserStoreError::UnexpectedError => Self::UnexpectedError,
+            UserStoreError::UnexpectedError(e) => Self::UnexpectedError(e),
         }
     }
 }

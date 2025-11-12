@@ -7,35 +7,35 @@ use crate::{
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use serde::{Deserialize, Serialize};
 
-// #[tracing::instrument(name = "Signup", skip_all, err(Debug))]
+#[tracing::instrument(name = "Signup", skip_all)]
 pub async fn signup<T: UserStore, B: BannedTokenStore, F: TwoFACodeStore, E: EmailClient>(
     State(state): State<AppState<T, B, F, E>>,
     Json(request): Json<SignupRequest>,
-) -> impl IntoResponse {
+) -> Result<impl IntoResponse, AuthAPIError> {
     let user = match User::try_from(request) {
         Ok(u) => u,
         Err(e) => {
-            return (
+            return Ok((
                 StatusCode::BAD_REQUEST,
                 Json(SignupResponse {
                     message: e.to_string(),
                 }),
             )
-                .into_response();
+                .into_response());
         }
     };
 
     let mut user_store = state.user_store.write().await;
 
     match user_store.add_user(user).await {
-        Ok(_) => (
+        Ok(_) => Ok((
             StatusCode::CREATED,
             Json(SignupResponse {
                 message: "User created successfully!".to_string(),
             }),
         )
-            .into_response(),
-        Err(e) => AuthAPIError::from(e).into_response(),
+            .into_response()),
+        Err(e) => Err(AuthAPIError::from(e)),
     }
 }
 

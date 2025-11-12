@@ -53,7 +53,7 @@ async fn handle_2fa<T: UserStore, B: BannedTokenStore, F: TwoFACodeStore, E: Ema
     match code_store
         .add_code(email.clone(), login_attempt_id.clone(), two_fa_code.clone())
         .await
-        .map_err(|_| AuthAPIError::UnexpectedError)
+        .map_err(|e| AuthAPIError::UnexpectedError)
     {
         Ok(_) => (),
         Err(e) => return (jar, Err(e)),
