@@ -7,6 +7,7 @@ use crate::{
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use serde::{Deserialize, Serialize};
 
+// #[tracing::instrument(name = "Signup", skip_all, err(Debug))]
 pub async fn signup<T: UserStore, B: BannedTokenStore, F: TwoFACodeStore, E: EmailClient>(
     State(state): State<AppState<T, B, F, E>>,
     Json(request): Json<SignupRequest>,

@@ -1,14 +1,9 @@
+use crate::{
+    routes,
+    utils::tracing::{make_span_with_request_id, on_request, on_response},
+};
 use std::error::Error;
-use std::sync::Arc;
-use tokio::sync::RwLock;
-use tower_http::services::ServeDir;
-
-mod app_state;
-pub mod domain;
-pub mod routes;
-pub mod services;
-pub mod utils;
-pub use app_state::AppState;
+use tower_http::{cors, services::ServeDir, trace::TraceLayer};
 
 use axum::{
     http::StatusCode,
@@ -17,11 +12,12 @@ use axum::{
     serve::Serve,
     Json, Router,
 };
-pub use domain::AuthAPIError;
-use domain::UserStore;
 use serde::{Deserialize, Serialize};
 
-pub type UserStoreType<T> = Arc<RwLock<T>>;
+use crate::{
+    domain::{BannedTokenStore, EmailClient, TwoFACodeStore, UserStore},
+    AppState, AuthAPIError,
+};
 
 pub struct Application {
     server: Serve<Router, Router>,
@@ -31,8 +27,13 @@ pub struct Application {
 }
 
 impl Application {
-    pub async fn build<T: UserStore + Send + Sync + Clone + 'static>(
-        app_state: AppState<T>,
+    pub async fn build<
+        T: UserStore + 'static,
+        B: BannedTokenStore + 'static,
+        F: TwoFACodeStore + 'static,
+        E: EmailClient + 'static,
+    >(
+        app_state: AppState<T, B, F, E>,
         address: &str,
     ) -> Result<Self, Box<dyn Error>> {
         let router = Router::new()
@@ -42,7 +43,18 @@ impl Application {
             .route("/signup", post(routes::signup))
             .route("/verify-2fa", post(routes::verify_2fa))
             .route("/verify-token", post(routes::verify_token))
-            .with_state(app_state);
+            .with_state(app_state)
+            .layer(cors::CorsLayer::default())
+            .layer(
+                // New!
+                // Add a TraceLayer for HTTP requests to enable detailed tracing
+                // This layer will create spans for each request using the make_span_with_request_id function,
+                // and log events at the start and end of each request using on_request and on_response functions.
+                TraceLayer::new_for_http()
+                    .make_span_with(make_span_with_request_id)
+                    .on_request(on_request)
+                    .on_response(on_response),
+            );
 
         let listener = tokio::net::TcpListener::bind(address).await?;
         let local_address = listener.local_addr().unwrap().to_string();
@@ -54,7 +66,7 @@ impl Application {
     }
 
     pub async fn run(self) -> Result<(), std::io::Error> {
-        println!("listening on {}", &self.address);
+        tracing::info!("listening on {}", &self.address);
         self.server.await
     }
 }
@@ -68,9 +80,8 @@ impl IntoResponse for AuthAPIError {
     fn into_response(self) -> Response {
         let (status, error_message) = match self {
             AuthAPIError::UserAlreadyExists => (StatusCode::CONFLICT, "User already exists"),
-            AuthAPIError::InvalidCredentials(_s) => {
-                // Logging/Tracing could be used here.
-                // (StatusCode::BAD_REQUEST, s.as_str())
+            AuthAPIError::InvalidCredentials(s) => {
+                tracing::warn!(msg = s.to_string());
                 (StatusCode::BAD_REQUEST, "Invalid Credentials")
             }
             Self::UserDoesNotExists => (StatusCode::NOT_FOUND, "User not found"),
@@ -80,6 +91,10 @@ impl IntoResponse for AuthAPIError {
             AuthAPIError::IncorrectCredentials => (StatusCode::NOT_FOUND, "User not found"),
             AuthAPIError::MissingToken => (StatusCode::BAD_REQUEST, "Missing token"),
             AuthAPIError::InvalidToken => (StatusCode::UNAUTHORIZED, "Invalid Token"),
+            AuthAPIError::TokenStoreError(e) => {
+                tracing::error!(msg = e.to_string());
+                (StatusCode::INTERNAL_SERVER_ERROR, "Unexpected error")
+            }
         };
         let body = Json(ErrorResponse {
             error: error_message.to_string(),

@@ -4,11 +4,13 @@ use auth_service::services::PostgresUserStore;
 use auth_service::services::RedisBannedTokenStore;
 use auth_service::services::RedisTwoFACodeStore;
 use auth_service::utils::constants::REDIS_HOST_NAME;
+use auth_service::utils::tracing::init_tracing;
 use auth_service::AppState;
 use auth_service::Application;
 
 #[tokio::main]
 async fn main() {
+    init_tracing();
     let pg_pool = configure_postgresql().await;
     let user_store = PostgresUserStore::new(pg_pool);
 
