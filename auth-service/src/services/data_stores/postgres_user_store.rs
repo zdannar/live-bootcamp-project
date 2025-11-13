@@ -58,13 +58,13 @@ impl UserStore for PostgresUserStore {
                 // compute password hash
                 let password_hash = compute_password_hash(user.password.into())
                     .await
-                    .map_err(|_e| UserStoreError::UnexpectedError)?;
+                    .map_err(|e| UserStoreError::UnexpectedError(e))?;
 
                 self.insert_user(user.email.as_ref(), &password_hash, user.requires_2fa)
                     .await
-                    .map_err(|_e| UserStoreError::UnexpectedError)
+                    .map_err(|e| UserStoreError::UnexpectedError(e.into()))
             }
-            _ => Err(UserStoreError::UnexpectedError),
+            Err(e) => Err(UserStoreError::UnexpectedError(e.into())),
         }
     }
 
@@ -80,7 +80,7 @@ impl UserStore for PostgresUserStore {
             sqlx::Error::RowNotFound => UserStoreError::UserNotFound,
             e => {
                 tracing::error!("Error!: {e:?}");
-                UserStoreError::UnexpectedError
+                UserStoreError::UnexpectedError(e.into())
             }
         })?;
         Ok(u)

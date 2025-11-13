@@ -2,8 +2,10 @@ use super::constants::{JWT_COOKIE_NAME, JWT_SECRET};
 
 use axum_extra::extract::cookie::{Cookie, SameSite};
 use chrono::Utc;
+use color_eyre::eyre::Error;
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Validation};
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 use crate::{
     domain::{BannedTokenStore, Email},
@@ -27,9 +29,11 @@ fn create_auth_cookie(token: String) -> Cookie<'static> {
     cookie
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Error)]
 pub enum GenerateTokenError {
+    #[error("Token error")]
     TokenError(jsonwebtoken::errors::Error),
+    #[error("Unexpected error")]
     UnexpectedError,
 }
 
@@ -66,7 +70,7 @@ pub async fn validate_token<B: BannedTokenStore>(
 ) -> Result<Claims, AuthAPIError> {
     match banned_token_store.exists(token).await {
         Ok(crate::domain::IsBannedToken::Banned(_)) => Err(AuthAPIError::InvalidToken),
-        Err(_e) => Err(AuthAPIError::UnexpectedError),
+        Err(e) => Err(AuthAPIError::UnexpectedError(e.into())),
         _ => validate_jwt_token(token).map_err(|_e| AuthAPIError::InvalidToken),
     }
 }

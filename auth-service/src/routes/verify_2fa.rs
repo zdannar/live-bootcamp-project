@@ -1,5 +1,6 @@
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use axum_extra::extract::CookieJar;
+use color_eyre::eyre::eyre;
 use serde::Deserialize;
 
 use crate::{
@@ -31,7 +32,12 @@ pub async fn verify_2fa<T: UserStore, B: BannedTokenStore, F: TwoFACodeStore, E:
             return (jar, Err(AuthAPIError::UserDoesNotExists))
         }
         Err(crate::domain::TwoFACodeStoreError::UnexpectedError) => {
-            return (jar, Err(AuthAPIError::UnexpectedError))
+            return (
+                jar,
+                Err(AuthAPIError::UnexpectedError(eyre!(
+                    "Failed to pull 2fa code"
+                ))),
+            )
         }
     };
 
@@ -43,8 +49,11 @@ pub async fn verify_2fa<T: UserStore, B: BannedTokenStore, F: TwoFACodeStore, E:
             StatusCode::UNAUTHORIZED
         };
 
-    let Ok(auth_cookie) = auth::generate_auth_cookie(&email) else {
-        return (jar, Err(AuthAPIError::UnexpectedError));
+    let auth_cookie = match auth::generate_auth_cookie(&email) {
+        Ok(auth_code) => auth_code,
+        Err(e) => {
+            return (jar, Err(AuthAPIError::UnexpectedError(e.into())));
+        }
     };
 
     (jar.add(auth_cookie), Ok(status_code))

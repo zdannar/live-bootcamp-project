@@ -95,9 +95,12 @@ pub trait TwoFACodeStore: Send + Sync + Clone {
     ) -> Result<(LoginAttemptId, TwoFACode), TwoFACodeStoreError>;
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Error)]
 pub enum TwoFACodeStoreError {
+    #[error("Login id not fount")]
     LoginAttemptIdNotFound,
+
+    #[error("Unexpected error")]
     UnexpectedError,
 }
 

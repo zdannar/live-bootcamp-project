@@ -11,7 +11,7 @@ use auth_service::Application;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     color_eyre::install().expect("Failed to install color_eyre");
-    init_tracing()?;
+    init_tracing().expect("Failed to initialize tracing");
     let pg_pool = configure_postgresql().await;
     let user_store = PostgresUserStore::new(pg_pool);
 
@@ -33,4 +33,5 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .expect("Failed to build app");
 
     app.run().await.expect("Failed to run app");
+    Ok(())
 }
