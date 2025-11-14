@@ -34,6 +34,8 @@ argon2 = { version = "0.5.3", features = ["std"] }
 redis = { version = "0.32.7", features = ["tokio-comp"] }
 color-eyre = "0.6.5"
 tracing-error = "0.2.1"
+secrecy = { version = "0.10.3", features = ["serde"] }
+quickcheck_macros = "0.9.1"
 
 [dev-dependencies]
 fake = "=2.3.0"
