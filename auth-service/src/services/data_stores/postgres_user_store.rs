@@ -1,4 +1,5 @@
 use color_eyre::eyre::{eyre, Context};
+use secrecy::ExposeSecret;
 use std::error::Error;
 
 use argon2::{
@@ -8,7 +9,7 @@ use argon2::{
 
 use sqlx::PgPool;
 
-use crate::domain::{Email, User};
+use crate::domain::{Email, Password, User};
 use crate::{UserStore, UserStoreError};
 
 #[derive(Clone)]
@@ -56,7 +57,7 @@ impl UserStore for PostgresUserStore {
             Ok(_) => Err(UserStoreError::UserAlreadyExists),
             Err(UserStoreError::UserNotFound) => {
                 // compute password hash
-                let password_hash = compute_password_hash(user.password.into())
+                let password_hash = compute_password_hash(user.password.as_ref().expose_secret())
                     .await
                     .map_err(|e| UserStoreError::UnexpectedError(e))?;
 
@@ -87,12 +88,19 @@ impl UserStore for PostgresUserStore {
     }
 
     #[tracing::instrument(name = "Validating user credentials in PostgreSQL", skip_all)]
-    async fn validate_user(&self, email: &Email, password: &str) -> Result<(), UserStoreError> {
+    async fn validate_user(
+        &self,
+        email: &Email,
+        password: &Password,
+    ) -> Result<(), UserStoreError> {
         let u = self.get_user(email).await?;
 
-        verify_password_hash(u.password.as_ref().to_string(), password.to_string())
-            .await
-            .map_err(|_e| UserStoreError::InvalidCredentials)
+        verify_password_hash(
+            u.password.as_ref().expose_secret().to_string(),
+            password.as_ref().expose_secret().to_string(),
+        )
+        .await
+        .map_err(|_e| UserStoreError::InvalidCredentials)
     }
 }
 
@@ -123,7 +131,8 @@ async fn verify_password_hash(
 //
 
 #[tracing::instrument(name = "Computing password hash", skip_all)]
-async fn compute_password_hash(password: String) -> color_eyre::Result<String> {
+async fn compute_password_hash(password_str: &str) -> color_eyre::Result<String> {
+    let password = password_str.to_owned();
     let salt: SaltString = SaltString::generate(&mut rand::thread_rng());
     let argon_conf = Argon2::new(
         Algorithm::Argon2id,

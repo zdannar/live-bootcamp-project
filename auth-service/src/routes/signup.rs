@@ -5,6 +5,7 @@ use crate::{
     AppState,
 };
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
+use secrecy::{ExposeSecret, SecretString, SerializableSecret};
 use serde::{Deserialize, Serialize};
 
 #[tracing::instrument(name = "Signup", skip_all)]
@@ -39,10 +40,10 @@ pub async fn signup<T: UserStore, B: BannedTokenStore, F: TwoFACodeStore, E: Ema
     }
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize)]
 pub struct SignupRequest {
     pub email: String,
-    pub password: String,
+    pub password: SecretString,
     #[serde(rename = "requires2FA")]
     pub requires_2fa: bool,
 }
@@ -55,7 +56,7 @@ impl SignupRequest {
     ) -> Self {
         Self {
             email: email.into(),
-            password: password.into(),
+            password: SecretString::from(password.into()),
             requires_2fa,
         }
     }
@@ -64,7 +65,13 @@ impl SignupRequest {
 impl TryFrom<SignupRequest> for User {
     type Error = AuthAPIError;
     fn try_from(value: SignupRequest) -> Result<Self, Self::Error> {
-        Ok(User::new(value.email, value.password, value.requires_2fa)?)
+        // TODO: Need to look at this.
+        Ok(User::new(
+            value.email,
+            // TODO: This seems like a problem.
+            value.password.expose_secret().to_string(),
+            value.requires_2fa,
+        )?)
     }
 }
 

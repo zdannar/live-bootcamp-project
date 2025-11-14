@@ -1,5 +1,6 @@
 use crate::helpers::{assert_success_and_context_type, get_random_email, TestApp};
-use auth_service::routes::{SignupRequest, SignupResponse};
+use crate::requests::SignupRequest;
+use auth_service::routes::SignupResponse;
 use auth_service::ErrorResponse;
 use sqlx::PgPool;
 
@@ -9,7 +10,6 @@ const VALID_EMAIL: &str = "chuck@chuck.com";
 const INVALID_EMAIL: &str = "chuck.chuck.com";
 
 #[sqlx::test]
-
 async fn should_return_201_if_valid_input(pool: PgPool) {
     let app = TestApp::new(pool).await;
     let response = app
@@ -55,7 +55,11 @@ async fn should_return_400_if_invalid_input(pool: PgPool) {
 async fn should_return_409_if_email_already_exists(pool: PgPool) {
     let app = TestApp::new(pool).await;
     // Call the signup route twice. The second request should fail with a 409 HTTP status code
-    let signup_request = SignupRequest::new(&get_random_email(), VALID_PASSWORD, false);
+    let signup_request = SignupRequest {
+        email: get_random_email(),
+        password: VALID_PASSWORD.to_string(),
+        requires_2fa: false,
+    };
 
     let mut response = app.post_signup(&signup_request).await;
     // assert_success_and_context_type(&response, 201, None);

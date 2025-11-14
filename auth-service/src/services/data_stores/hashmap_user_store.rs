@@ -1,6 +1,8 @@
+use crate::domain::Password;
 use crate::domain::UserStore;
 use crate::domain::UserStoreError;
 use crate::domain::{Email, User};
+use secrecy::ExposeSecret;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -31,9 +33,13 @@ impl UserStore for HashmapUserStore {
             .to_owned())
     }
 
-    async fn validate_user(&self, email: &Email, password: &str) -> Result<(), UserStoreError> {
+    async fn validate_user(
+        &self,
+        email: &Email,
+        password: &Password,
+    ) -> Result<(), UserStoreError> {
         let u = self.get_user(email).await?;
-        match u.password.as_ref() == password {
+        match &u.password == password {
             true => Ok(()),
             false => Err(UserStoreError::InvalidCredentials),
         }
@@ -83,11 +89,15 @@ mod tests {
         let u = User::new(VALID_EMAIL, VALID_PASSWORD, false).unwrap();
         user_store.add_user(u.clone()).await.unwrap();
         assert_eq!(
-            user_store.validate_user(&u.email, VALID_PASSWORD).await,
+            user_store
+                .validate_user(&u.email, &VALID_PASSWORD.into())
+                .await,
             Ok(())
         );
         assert_eq!(
-            user_store.validate_user(&u.email, INVALID_PASSWORD).await,
+            user_store
+                .validate_user(&u.email, &INVALID_PASSWORD.into())
+                .await,
             Err(UserStoreError::InvalidCredentials)
         );
     }

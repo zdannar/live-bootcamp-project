@@ -21,7 +21,7 @@ async fn should_return_400_if_invalid_input(pool: PgPool) {
     let response = app
         .post_login(&requests::LoginRequest {
             email: "something@somewhere.com",
-            password: "word",
+            password: "word".into(),
         })
         .await;
     assert_success_and_context_type(&response, 400, None);

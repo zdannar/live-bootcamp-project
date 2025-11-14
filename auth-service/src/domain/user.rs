@@ -1,4 +1,5 @@
 use crate::domain::{Email, Password};
+use secrecy::SecretString;
 use sqlx::FromRow;
 use thiserror::Error;
 
@@ -10,15 +11,15 @@ pub struct User {
 }
 
 impl User {
-    pub fn new<T: ToString>(
+    pub fn new<T: Into<String>>(
         email: T,
         password: T,
         requires_2fa: bool,
     ) -> Result<Self, UserValidationError> {
-        let valid_email = Email::parse(email.to_string())
+        let valid_email = Email::parse(email.into())
             .map_err(|e| UserValidationError::InvalidEmail(e.to_string()))?;
 
-        let validate_password = Password::parse(password.to_string())
+        let validate_password = Password::parse(SecretString::from(password.into()))
             .map_err(|e| UserValidationError::InvalidPassword(e.to_string()))?;
 
         Ok(Self {
