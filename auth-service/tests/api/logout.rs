@@ -34,7 +34,7 @@ async fn logout_return_200(pool: PgPool) {
     let app = TestApp::new(pool).await;
 
     let valid_token =
-        auth::generate_auth_token(&Email::parse(get_random_email()).unwrap()).unwrap();
+        auth::generate_auth_token(&Email::parse(get_random_email().into()).unwrap()).unwrap();
 
     // add invalid cookie
     app.cookie_jar.add_cookie_str(

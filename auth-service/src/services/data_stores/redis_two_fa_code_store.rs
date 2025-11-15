@@ -97,6 +97,6 @@ const TWO_FA_CODE_PREFIX: &str = "two_fa_code:";
 
 impl Email {
     fn as_key(&self) -> String {
-        format!("{}{}", TWO_FA_CODE_PREFIX, self.as_ref())
+        format!("{}{}", TWO_FA_CODE_PREFIX, self.sha1())
     }
 }

@@ -2,8 +2,8 @@ use super::constants::{JWT_COOKIE_NAME, JWT_SECRET};
 
 use axum_extra::extract::cookie::{Cookie, SameSite};
 use chrono::Utc;
-use color_eyre::eyre::Error;
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Validation};
+use secrecy::ExposeSecret;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -56,7 +56,7 @@ pub fn generate_auth_token(email: &Email) -> Result<String, GenerateTokenError> 
         .try_into()
         .map_err(|_| GenerateTokenError::UnexpectedError)?;
 
-    let sub = email.as_ref().to_owned();
+    let sub = email.as_ref().expose_secret().to_owned();
 
     let claims = Claims { sub, exp };
 
@@ -105,7 +105,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_generate_auth_cookie() {
-        let email = Email::parse("test@example.com".to_owned()).unwrap();
+        let email = Email::parse("test@example.com".to_owned().into()).unwrap();
         let cookie = generate_auth_cookie(&email).unwrap();
         assert_eq!(cookie.name(), JWT_COOKIE_NAME);
         assert_eq!(cookie.value().split('.').count(), 3);
@@ -127,14 +127,14 @@ mod tests {
 
     #[tokio::test]
     async fn test_generate_auth_token() {
-        let email = Email::parse("test@example.com".to_owned()).unwrap();
+        let email = Email::parse("test@example.com".to_owned().into()).unwrap();
         let result = generate_auth_token(&email).unwrap();
         assert_eq!(result.split('.').count(), 3);
     }
 
     #[tokio::test]
     async fn test_validate_token_with_valid_token() {
-        let email = Email::parse("test@example.com".to_owned()).unwrap();
+        let email = Email::parse("test@example.com".to_owned().into()).unwrap();
         let token = generate_auth_token(&email).unwrap();
         let result = validate_jwt_token(&token).unwrap();
         assert_eq!(result.sub, "test@example.com");

@@ -1,9 +1,9 @@
-use secrecy::{CloneableSecret, ExposeSecret, SecretString, SerializableSecret};
-use serde::{Deserialize, Serialize};
+use secrecy::{ExposeSecret, SecretString};
+use serde::Deserialize;
 use sqlx::postgres::{PgTypeInfo, PgValueRef};
 use sqlx::{Decode, Postgres, Type};
 use std::convert::AsRef;
-use validator::{Validate, ValidationError, ValidationErrors};
+use validator::ValidationError;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Password {

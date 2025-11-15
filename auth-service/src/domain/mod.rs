@@ -4,7 +4,6 @@ mod email_client;
 mod error;
 mod login;
 mod password;
-mod password2;
 mod user;
 
 pub use data_stores::*;

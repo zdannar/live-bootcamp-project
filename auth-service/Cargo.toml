@@ -36,6 +36,8 @@ color-eyre = "0.6.5"
 tracing-error = "0.2.1"
 secrecy = { version = "0.10.3", features = ["serde"] }
 quickcheck_macros = "0.9.1"
+sha1 = "0.10.6"
+hex = "0.4.3"
 
 [dev-dependencies]
 fake = "=2.3.0"

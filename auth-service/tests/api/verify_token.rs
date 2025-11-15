@@ -15,7 +15,7 @@ async fn should_return_422_if_malformed_input(pool: PgPool) {
 #[sqlx::test]
 async fn should_return_200_valid_token(pool: PgPool) {
     let app = TestApp::new(pool).await;
-    let email = Email::parse(get_random_email()).unwrap();
+    let email = Email::parse(get_random_email().into()).unwrap();
     let request = VerifyTokenRequest {
         token: generate_auth_token(&email).unwrap(),
     };
@@ -36,7 +36,7 @@ async fn should_return_401_if_invalid_token(pool: PgPool) {
 #[sqlx::test]
 async fn should_return_401_if_banned_token(pool: PgPool) {
     let app = TestApp::new(pool).await;
-    let email = Email::parse(get_random_email()).unwrap();
+    let email = Email::parse(get_random_email().into()).unwrap();
     let token = generate_auth_token(&email).unwrap();
     app.banned_token_store.store(&token).await.unwrap();
 

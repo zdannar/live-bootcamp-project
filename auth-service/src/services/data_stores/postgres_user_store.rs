@@ -61,9 +61,13 @@ impl UserStore for PostgresUserStore {
                     .await
                     .map_err(|e| UserStoreError::UnexpectedError(e))?;
 
-                self.insert_user(user.email.as_ref(), &password_hash, user.requires_2fa)
-                    .await
-                    .map_err(|e| UserStoreError::UnexpectedError(e.into()))
+                self.insert_user(
+                    user.email.as_ref().expose_secret(),
+                    &password_hash,
+                    user.requires_2fa,
+                )
+                .await
+                .map_err(|e| UserStoreError::UnexpectedError(e.into()))
             }
             Err(e) => Err(UserStoreError::UnexpectedError(e.into())),
         }
@@ -74,7 +78,7 @@ impl UserStore for PostgresUserStore {
         let u: User = sqlx::query_as(
             "SELECT email, password_hash as password, requires_2fa FROM users WHERE email = $1",
         )
-        .bind(email.as_ref())
+        .bind(email.as_ref().expose_secret())
         .fetch_one(&self.pool)
         .await
         .map_err(|e| match e {

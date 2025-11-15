@@ -33,10 +33,10 @@ async fn should_return_401_if_incorrect_credentials(pool: PgPool) {
     // NOTE: This should be a helper function to:
 
     let app = TestApp::new(pool).await;
-    let random_email = Email::parse(get_random_email()).unwrap();
 
+    let random_email = get_random_email();
     let signup_body = serde_json::json!({
-        "email": random_email.as_ref(),
+        "email": &random_email,
         "password": "password123",
         "requires2FA": true
     });
@@ -45,7 +45,7 @@ async fn should_return_401_if_incorrect_credentials(pool: PgPool) {
     assert_eq!(response.status().as_u16(), 201);
 
     let login_body = serde_json::json!({
-        "email": random_email.as_ref(),
+        "email": &random_email,
         "password": "password123",
     });
 
@@ -55,7 +55,7 @@ async fn should_return_401_if_incorrect_credentials(pool: PgPool) {
     let two_fa_response = response.json::<TwoFactorAuthResponse>().await.unwrap();
 
     let req = requests::Verify2FARequest {
-        email: random_email.as_ref(),
+        email: &random_email,
         login_attempt_id: two_fa_response.login_attempt_id,
         two_fa_code: "000000123",
     };
@@ -68,10 +68,10 @@ async fn should_return_401_if_incorrect_credentials(pool: PgPool) {
 async fn should_return_401_if_old_code(pool: PgPool) {
     // Call login twice. Then, attempt to call verify-fa with the 2FA code from the first login requet. This should fail.
     let app = TestApp::new(pool).await;
-    let random_email = Email::parse(get_random_email()).unwrap();
+    let random_email = get_random_email();
 
     let signup_body = serde_json::json!({
-        "email": random_email.as_ref(),
+        "email": &random_email,
         "password": "password123",
         "requires2FA": true
     });
@@ -80,7 +80,7 @@ async fn should_return_401_if_old_code(pool: PgPool) {
     assert_eq!(response.status().as_u16(), 201);
 
     let login_body = serde_json::json!({
-        "email": random_email.as_ref(),
+        "email": random_email.clone(),
         "password": "password123",
     });
 
@@ -89,8 +89,11 @@ async fn should_return_401_if_old_code(pool: PgPool) {
     assert_eq!(response.status().as_u16(), 206);
 
     // Get the old login code.
-    let (login_attempt_id, first_two_fa_code) =
-        app.two_fa_code_store.get_code(&random_email).await.unwrap();
+    let (login_attempt_id, first_two_fa_code) = app
+        .two_fa_code_store
+        .get_code(&Email::parse(random_email.clone().into()).unwrap())
+        .await
+        .unwrap();
 
     // Second login.  Code should have changed in the backend.
     let response = app.post_login(&login_body).await;
@@ -98,7 +101,7 @@ async fn should_return_401_if_old_code(pool: PgPool) {
 
     // Now verify the code
     let req = requests::Verify2FARequest {
-        email: random_email.as_ref(),
+        email: random_email.clone(),
         login_attempt_id: login_attempt_id.as_ref(),
         two_fa_code: first_two_fa_code.as_ref(),
     };
@@ -112,10 +115,10 @@ async fn should_return_200_if_correct_code(pool: PgPool) {
     // Make sure to assert the auth cookie gets set
 
     let app = TestApp::new(pool).await;
-    let random_email = Email::parse(get_random_email()).unwrap();
+    let random_email = get_random_email();
 
     let signup_body = serde_json::json!({
-        "email": random_email.as_ref(),
+        "email": random_email.clone(),
         "password": "password123",
         "requires2FA": true
     });
@@ -124,7 +127,7 @@ async fn should_return_200_if_correct_code(pool: PgPool) {
     assert_eq!(response.status().as_u16(), 201);
 
     let login_body = serde_json::json!({
-        "email": random_email.as_ref(),
+        "email": random_email.clone(),
         "password": "password123",
     });
 
@@ -133,12 +136,15 @@ async fn should_return_200_if_correct_code(pool: PgPool) {
     assert_eq!(response.status().as_u16(), 206);
 
     // Get the old login code.
-    let (login_attempt_id, two_fa_code) =
-        app.two_fa_code_store.get_code(&random_email).await.unwrap();
+    let (login_attempt_id, two_fa_code) = app
+        .two_fa_code_store
+        .get_code(&Email::parse(random_email.clone().into()).unwrap())
+        .await
+        .unwrap();
 
     // Now verify the code
     let req = requests::Verify2FARequest {
-        email: random_email.as_ref(),
+        email: random_email.clone(),
         login_attempt_id: login_attempt_id.as_ref(),
         two_fa_code: two_fa_code.as_ref(),
     };

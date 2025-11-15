@@ -63,10 +63,10 @@ async fn should_return_200_if_valid_credentials_and_2fa_disabled(pool: PgPool) {
 #[sqlx::test]
 async fn should_return_206_if_valid_credentials_and_2fa_enabled(pool: PgPool) {
     let app = TestApp::new(pool).await;
-    let random_email = Email::parse(get_random_email()).unwrap();
+    let random_email = get_random_email();
 
     let signup_body = serde_json::json!({
-        "email": random_email.as_ref(),
+        "email": random_email.clone(),
         "password": "password123",
         "requires2FA": true
     });
@@ -76,7 +76,7 @@ async fn should_return_206_if_valid_credentials_and_2fa_enabled(pool: PgPool) {
     assert_eq!(response.status().as_u16(), 201);
 
     let login_body = serde_json::json!({
-        "email": random_email.as_ref(),
+        "email": random_email.clone(),
         "password": "password123",
     });
 
@@ -94,10 +94,11 @@ async fn should_return_206_if_valid_credentials_and_2fa_enabled(pool: PgPool) {
         "->> 2FA is required failed"
     );
 
-    println!("{:?}", app.two_fa_code_store.get_code(&random_email).await);
-
     assert!(
-        app.two_fa_code_store.get_code(&random_email).await.is_ok(),
+        app.two_fa_code_store
+            .get_code(&Email::parse(random_email.clone().into()).unwrap())
+            .await
+            .is_ok(),
         "->> Retrieve from code store failed"
     );
 }

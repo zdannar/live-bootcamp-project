@@ -10,7 +10,7 @@ pub struct Login {
 
 impl Login {
     pub fn new<T: Into<String>>(email: T, password: T) -> Result<Self, UserValidationError> {
-        let valid_email = Email::parse(email.into())
+        let valid_email = Email::parse(SecretString::from(email.into()))
             .map_err(|e| UserValidationError::InvalidEmail(e.to_string()))?;
 
         let validate_password = Password::parse(SecretString::from(password.into()))

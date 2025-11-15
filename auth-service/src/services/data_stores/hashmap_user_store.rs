@@ -2,7 +2,6 @@ use crate::domain::Password;
 use crate::domain::UserStore;
 use crate::domain::UserStoreError;
 use crate::domain::{Email, User};
-use secrecy::ExposeSecret;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;

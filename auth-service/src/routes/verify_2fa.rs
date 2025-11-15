@@ -1,6 +1,7 @@
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use axum_extra::extract::CookieJar;
 use color_eyre::eyre::eyre;
+use secrecy::SecretString;
 use serde::Deserialize;
 
 use crate::{
@@ -19,7 +20,7 @@ pub async fn verify_2fa<T: UserStore, B: BannedTokenStore, F: TwoFACodeStore, E:
     let code_store = state.two_fa_code_store.read().await;
 
     let (Ok(email), Ok(login_attempt_id), Ok(two_fa_code)) = (
-        Email::parse(request.email),
+        Email::parse(SecretString::from(request.email)),
         LoginAttemptId::parse(request.login_attempt_id),
         TwoFACode::parse(request.two_fa_code),
     ) else {
